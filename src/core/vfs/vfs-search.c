@@ -1,6 +1,6 @@
 /*
  *      fm-vfs-search.c
- * 
+ *
  *      Copyright 2012 Hong Jen Yee (PCMan) <pcman.tw@gmail.com>
  *      Copyright 2010 Shae Smittle <starfall87@gmail.com>
  *
@@ -66,8 +66,10 @@ struct _FmVfsSearchEnumerator
     GSList* target_folders; /* GFile */
     char** name_patterns;
     GRegex* name_regex;
+    GRegex* name_regex_utf8; /* to be made without G_REGEX_RAW */
     char* content_pattern;
     GRegex* content_regex;
+    GRegex* content_regex_utf8; /* to be made without G_REGEX_RAW */
     char** mime_types;
     guint64 min_mtime;
     guint64 max_mtime;
@@ -193,6 +195,12 @@ static void _fm_vfs_search_enumerator_dispose(GObject *object)
         priv->name_regex = NULL;
     }
 
+    if(priv->name_regex_utf8)
+    {
+        g_regex_unref(priv->name_regex_utf8);
+        priv->name_regex_utf8 = NULL;
+    }
+
     if(priv->content_pattern)
     {
         g_free(priv->content_pattern);
@@ -203,6 +211,12 @@ static void _fm_vfs_search_enumerator_dispose(GObject *object)
     {
         g_regex_unref(priv->content_regex);
         priv->content_regex = NULL;
+    }
+
+    if(priv->content_regex_utf8)
+    {
+        g_regex_unref(priv->content_regex_utf8);
+        priv->content_regex_utf8 = NULL;
     }
 
     if(priv->mime_types)
@@ -292,9 +306,12 @@ static GFileInfo *_fm_vfs_search_enumerator_next_file(GFileEnumerator *enumerato
                 {
                     const char * name = g_file_info_get_name(file_info);
                     GFile * file = g_file_get_child(iter->folder_path, name);
-                    /* go into directory and iterate it now */
-                    fm_search_job_match_folder(enu, file, cancellable, &err);
-                    g_object_unref(file);
+                    if(file)
+                    {
+                        /* go into directory and iterate it now */
+                        fm_search_job_match_folder(enu, file, cancellable, &err);
+                        g_object_unref(file);
+                    }
                 }
             }
 
@@ -354,7 +371,7 @@ static void fm_vfs_search_enumerator_class_init(FmVfsSearchEnumeratorClass *klas
 
   enumerator_class->next_file = _fm_vfs_search_enumerator_next_file;
   enumerator_class->close_fn = _fm_vfs_search_enumerator_close;
-  
+
 }
 
 static void fm_vfs_search_enumerator_init(FmVfsSearchEnumerator *enumerator)
@@ -408,9 +425,9 @@ static time_t parse_date_str(const char* str)
  * parse_search_uri
  * @job
  * @uri: a search uri
- * 
+ *
  * Format of a search URI is similar to that of an http URI:
- * 
+ *
  * search://<folder1>,<folder2>,<folder...>?<parameter1=value1>&<parameter2=value2>&...
  * The optional parameter key/value pairs are:
  * show_hidden=<0 or 1>: whether to search for hidden files
@@ -426,15 +443,15 @@ static time_t parse_date_str(const char* str)
  * max_size=<bytes>
  * min_mtime=YYYY-MM-DD
  * max_mtime=YYYY-MM-DD
- * 
+ *
  * An example to search all *.desktop files in /usr/share and /usr/local/share
  * can be written like this:
- * 
+ *
  * search:///usr/share,/usr/local/share?recursive=1&show_hidden=0&name=*.desktop&name_ci=0
- * 
+ *
  * If the folder paths and parameters contain invalid characters for a
  * URI, they should be escaped.
- * 
+ *
  */
 static void parse_search_uri(FmVfsSearchEnumerator* priv, const char* uri_str)
 {
@@ -536,7 +553,7 @@ static void parse_search_uri(FmVfsSearchEnumerator* priv, const char* uri_str)
                     priv->mime_types = g_strsplit(value, ";", -1);
 
                     /* For mime_type patterns such as image/* and audio/*,
-                     * we move the trailing '*' to begining of the string
+                     * we move the trailing '*' to beginning of the string
                      * as a measure of optimization. Later we can detect if it's a
                      * pattern or a full type name by checking the first char. */
                     if(priv->mime_types)
@@ -591,6 +608,10 @@ static void parse_search_uri(FmVfsSearchEnumerator* priv, const char* uri_str)
                 if(priv->name_case_insensitive)
                     flags |= G_REGEX_CASELESS;
                 priv->name_regex = g_regex_new(name_regex, flags, 0, NULL);
+                priv->name_regex_utf8 = g_regex_new(name_regex,
+                                                    priv->name_case_insensitive ? G_REGEX_CASELESS
+                                                                                : 0,
+                                                    0, NULL);
                 g_free(name_regex);
             }
 
@@ -600,6 +621,10 @@ static void parse_search_uri(FmVfsSearchEnumerator* priv, const char* uri_str)
                 if(priv->content_case_insensitive)
                     flags |= G_REGEX_CASELESS;
                 priv->content_regex = g_regex_new(content_regex, flags, 0, NULL);
+                priv->content_regex_utf8 = g_regex_new(content_regex,
+                                                       priv->content_case_insensitive ? G_REGEX_CASELESS
+                                                                                      : 0,
+                                                       0, NULL);
                 g_free(content_regex);
             }
 
@@ -645,7 +670,10 @@ static gboolean fm_search_job_match_filename(FmVfsSearchEnumerator* priv, GFileI
     if(priv->name_regex)
     {
         const char* name = g_file_info_get_name(info);
-        ret = g_regex_match(priv->name_regex, name, 0, NULL);
+        if(g_utf8_validate(name, -1, NULL))
+            ret = g_regex_match(priv->name_regex_utf8, name, 0, NULL);
+        else
+            ret = g_regex_match(priv->name_regex, name, 0, NULL);
     }
     else if(priv->name_patterns)
     {
@@ -686,7 +714,10 @@ static gboolean fm_search_job_match_content_line_based(FmVfsSearchEnumerator* pr
         if(priv->content_regex)
         {
             /* match using regexp */
-            ret = g_regex_match(priv->content_regex, line, 0, NULL);
+            if(g_utf8_validate(line, -1, NULL))
+                ret = g_regex_match(priv->content_regex_utf8, line, 0, NULL);
+            else
+                ret = g_regex_match(priv->content_regex, line, 0, NULL);
         }
         else if(priv->content_pattern && priv->content_case_insensitive)
         {
@@ -727,7 +758,7 @@ static gboolean fm_search_job_match_content_exact(FmVfsSearchEnumerator* priv,
     gssize size;
 
     /* Ensure that the allocated buffer is longer than the string being
-     * searched for. Otherwise it's not possible for the buffer to 
+     * searched for. Otherwise it's not possible for the buffer to
      * contain a string fully matching the pattern. */
     int pattern_len = strlen(priv->content_pattern);
     int buf_size = pattern_len > 4095 ? pattern_len : 4095;
@@ -752,7 +783,7 @@ static gboolean fm_search_job_match_content_exact(FmVfsSearchEnumerator* priv,
         }
         else if(size == bytes_to_read) /* if size < bytes_to_read, we're at EOF and there are no further data. */
         {
-            /* Preserve the last <pattern_len-1> bytes and move them to 
+            /* Preserve the last <pattern_len-1> bytes and move them to
              * the beginning of the buffer.
              * Append further data after this chunk of data at next read. */
             int preserve_len = pattern_len - 1;
@@ -778,33 +809,36 @@ static gboolean fm_search_job_match_content(FmVfsSearchEnumerator* priv,
         if(g_file_info_get_file_type(info) == G_FILE_TYPE_REGULAR && g_file_info_get_size(info) > 0)
         {
             GFile* file = g_file_get_child(parent, g_file_info_get_name(info));
-            /* NOTE: I disabled mmap-based search since this could cause
-             * unexpected crashes sometimes if the mapped files are
-             * removed or changed during the search. */
-            GFileInputStream * stream = g_file_read(file, cancellable, error);
-            g_object_unref(file);
-
-            if(stream)
+            if(file)
             {
-                if(priv->content_pattern && !priv->content_case_insensitive)
-                {
-                    /* stream based search optimized for case sensitive
-                     * exact match. */
-                    ret = fm_search_job_match_content_exact(priv, info,
-                                                        G_INPUT_STREAM(stream),
-                                                        cancellable, error);
-                }
-                else
-                {
-                    /* grep-like regexp search and case insensitive search
-                     * are line-based. */
-                    ret = fm_search_job_match_content_line_based(priv, info,
-                                                        G_INPUT_STREAM(stream),
-                                                        cancellable, error);
-                }
+                /* NOTE: I disabled mmap-based search since this could cause
+                * unexpected crashes sometimes if the mapped files are
+                * removed or changed during the search. */
+                GFileInputStream * stream = g_file_read(file, cancellable, error);
+                g_object_unref(file);
 
-                g_input_stream_close(G_INPUT_STREAM(stream), cancellable, NULL);
-                g_object_unref(stream);
+                if(stream)
+                {
+                    if(priv->content_pattern && !priv->content_case_insensitive)
+                    {
+                        /* stream based search optimized for case sensitive
+                        * exact match. */
+                        ret = fm_search_job_match_content_exact(priv, info,
+                                                            G_INPUT_STREAM(stream),
+                                                            cancellable, error);
+                    }
+                    else
+                    {
+                        /* grep-like regexp search and case insensitive search
+                        * are line-based. */
+                        ret = fm_search_job_match_content_line_based(priv, info,
+                                                            G_INPUT_STREAM(stream),
+                                                            cancellable, error);
+                    }
+
+                    g_input_stream_close(G_INPUT_STREAM(stream), cancellable, NULL);
+                    g_object_unref(stream);
+                }
             }
         }
     }
@@ -825,7 +859,7 @@ static gboolean fm_search_job_match_file_type(FmVfsSearchEnumerator* priv, GFile
         {
             const char* mime_type = *pmime_type;
             /* For mime_type patterns such as image/* and audio/*,
-             * we move the trailing '*' to begining of the string
+             * we move the trailing '*' to beginning of the string
              * as a measure of optimization. We can know it's a
              * pattern not a full type name by checking the first char. */
             if(mime_type[0] == '*')

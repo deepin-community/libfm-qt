@@ -41,6 +41,7 @@ FolderItemDelegate::FolderItemDelegate(QAbstractItemView* view, QObject* parent)
     QStyledItemDelegate(parent ? parent : view),
     symlinkIcon_(QIcon::fromTheme(QStringLiteral("emblem-symbolic-link"))),
     untrustedIcon_(QIcon::fromTheme(QStringLiteral("emblem-important"))),
+    mountedIcon_(QIcon::fromTheme(QStringLiteral("emblem-mounted"))),
     addIcon_(QIcon::fromTheme(QStringLiteral("list-add"))),
     removeIcon_(QIcon::fromTheme(QStringLiteral("list-remove"))),
     fileInfoRole_(Fm::FolderModel::FileInfoRole),
@@ -48,7 +49,7 @@ FolderItemDelegate::FolderItemDelegate(QAbstractItemView* view, QObject* parent)
     margins_(QSize(3, 3)),
     shadowHidden_(false),
     hasEditor_(false) {
-    connect(this,  &QAbstractItemDelegate::closeEditor, [=]{hasEditor_ = false;});
+    connect(this,  &QAbstractItemDelegate::closeEditor, [this]{hasEditor_ = false;});
 }
 
 FolderItemDelegate::~FolderItemDelegate() {
@@ -174,6 +175,11 @@ void FolderItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
             untrustedIcon_.paint(painter, iconRect.translated(0, option.decorationSize.height() / 2), Qt::AlignCenter, iconMode);
         }
 
+        if(file && file->canUnmount()) {
+            // emblem for mounted mountable files
+            mountedIcon_.paint(painter, iconRect.translated(option.decorationSize.width() / 2, 0), Qt::AlignCenter, iconMode);
+        }
+
         // draw other emblems if there's any
         if(!emblems.empty()) {
             // FIXME: we only support one emblem now
@@ -225,13 +231,11 @@ void FolderItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         drawText(painter, opt, textRect);
         painter->restore();
     }
-    else {  // horizontal layout (list view)
+    else { // horizontal layout (list view)
 
         // Let the style engine do the painting but take care of shadowed and cut icons.
         // NOTE: The shadowing can also be done directly.
         // WARNING: QStyledItemDelegate shouldn't be used for painting because it resets the icon.
-        // FIXME: For better text alignment, here we could have increased the icon width
-        // when it's smaller than the requested size.
 
         QIcon::Mode iconMode = shadowIcon ? QIcon::Disabled : iconModeFromState(opt.state);
 
@@ -255,6 +259,7 @@ void FolderItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
 
         const QWidget* widget = opt.widget;
         QStyle* style = widget ? widget->style() : QApplication::style();
+        opt.decorationSize = option.decorationSize; // for a better text alignment
         style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, widget);
 
         if(isCut && !opt.icon.isNull()) {
@@ -263,22 +268,21 @@ void FolderItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         }
 
         // draw some emblems for the item if needed
+        QRect iconRect = style->subElementRect(QStyle::SE_ItemViewItemDecoration, &opt, widget);
+        iconRect.setSize(option.decorationSize / 2);
         if(isSymlink) {
-            QPoint iconPos(opt.rect.x(), opt.rect.y() + (opt.rect.height() - option.decorationSize.height()) / 2);
-            QRect iconRect(iconPos, option.decorationSize / 2);
             symlinkIcon_.paint(painter, iconRect, Qt::AlignCenter, iconMode);
         }
         if(untrusted) {
-            QPoint iconPos(opt.rect.x(), opt.rect.y() + opt.rect.height() / 2);
-            QRect iconRect(iconPos, option.decorationSize / 2);
-            untrustedIcon_.paint(painter, iconRect, Qt::AlignCenter, iconMode);
+            untrustedIcon_.paint(painter, iconRect.translated(0, option.decorationSize.height() / 2), Qt::AlignCenter, iconMode);
+        }
+        if(file && file->canUnmount()) {
+            mountedIcon_.paint(painter, iconRect.translated(option.decorationSize.width() / 2, 0), Qt::AlignCenter, iconMode);
         }
         if(!emblems.empty()) {
             // FIXME: we only support one emblem now
-            QPoint iconPos(opt.rect.x() + option.decorationSize.width() / 2, opt.rect.y() + opt.rect.height() / 2);
-            QRect iconRect(iconPos, option.decorationSize / 2);
             QIcon emblem = emblems.front()->qicon();
-            emblem.paint(painter, iconRect, Qt::AlignCenter, iconMode);
+            emblem.paint(painter, iconRect.translated(option.decorationSize.width() / 2, option.decorationSize.height() / 2), Qt::AlignCenter, iconMode);
         }
     }
 }
@@ -327,11 +331,7 @@ void FolderItemDelegate::drawText(QPainter* painter, QStyleOptionViewItem& opt, 
     }
     layout.endLayout();
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,11,0))
     width = qMax(width, static_cast<qreal>(opt.fontMetrics.horizontalAdvance(elidedText)));
-#else
-    width = qMax(width, (qreal)opt.fontMetrics.width(elidedText));
-#endif
 
     // draw background for selected item
     QRectF boundRect = layout.boundingRect();
@@ -501,11 +501,30 @@ void FolderItemDelegate::setEditorData(QWidget* editor, const QModelIndex& index
 bool FolderItemDelegate::eventFilter(QObject* object, QEvent* event) {
     QWidget *editor = qobject_cast<QWidget*>(object);
     if (editor && event->type() == QEvent::KeyPress) {
-        int k = static_cast<QKeyEvent *>(event)->key();
+        auto ke = static_cast<QKeyEvent*>(event);
+        int k = ke->key();
         if (k == Qt::Key_Return || k == Qt::Key_Enter) {
             Q_EMIT QAbstractItemDelegate::commitData(editor);
             Q_EMIT QAbstractItemDelegate::closeEditor(editor, QAbstractItemDelegate::NoHint);
             return true;
+        }
+        // go to first/last position with Home/End key in the text-edit
+        else if (k == Qt::Key_Home || k == Qt::Key_End) {
+            if(auto textEdit = qobject_cast<QTextEdit*>(editor)) {
+                auto txtCur = textEdit->textCursor();
+                txtCur.movePosition(k == Qt::Key_Home ? QTextCursor::Start : QTextCursor::End,
+                                    ke->modifiers() == Qt::ShiftModifier ? QTextCursor::KeepAnchor
+                                                                         : QTextCursor::MoveAnchor);
+                textEdit->setTextCursor(txtCur);
+                return true;
+            }
+        }
+        // allow inserting text tab with the line-edit too
+        else if (k == Qt::Key_Tab) {
+            if(auto lineEdit = qobject_cast<QLineEdit*>(editor)) {
+                lineEdit->insert(QString(QChar::Tabulation));
+                return true;
+            }
         }
     }
     return QStyledItemDelegate::eventFilter(object, event);
@@ -515,20 +534,23 @@ void FolderItemDelegate::updateEditorGeometry(QWidget* editor, const QStyleOptio
     if (option.decorationPosition == QStyleOptionViewItem::Top
         || option.decorationPosition == QStyleOptionViewItem::Bottom) {
         // give all of the available space to the editor
-        QStyleOptionViewItem opt = option;
-        initStyleOption(&opt, index);
-        opt.decorationAlignment = Qt::AlignHCenter|Qt::AlignTop;
-        opt.displayAlignment = Qt::AlignTop|Qt::AlignHCenter;
-        QRect textRect(opt.rect.x(),
-                       opt.rect.y() + margins_.height() + option.decorationSize.height(),
+        QRect textRect(option.rect.x(),
+                       option.rect.y() + margins_.height() + option.decorationSize.height(),
                        itemSize_.width(),
                        itemSize_.height() - margins_.height() - option.decorationSize.height());
         int frame = editor->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &option, editor);
         editor->setGeometry(textRect.adjusted(-frame, -frame, frame, frame));
     }
     else {
-        // use the default editor geometry in compact view
-        QStyledItemDelegate::updateEditorGeometry(editor, option, index);
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+        opt.decorationSize = option.decorationSize;
+        opt.decorationAlignment = Qt::AlignVCenter|Qt::AlignLeft;
+        opt.displayAlignment = Qt::AlignVCenter|Qt::AlignLeft;
+        opt.showDecorationSelected = editor->style()->styleHint(QStyle::SH_ItemView_ShowDecorationSelected, nullptr, editor);
+        const QWidget* widget = option.widget;
+        QStyle* style = widget ? widget->style() : QApplication::style();
+        editor->setGeometry(style->subElementRect(QStyle::SE_ItemViewItemText, &opt, widget));
     }
 }
 

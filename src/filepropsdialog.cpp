@@ -139,7 +139,7 @@ void FilePropsDialog::initPermissionsPage() {
             ownerPerm = DIFFERENT_PERMS;    // not all files have the same permission for owner
         }
         if(groupPerm != DIFFERENT_PERMS && groupPerm != (fi_mode & (S_IRGRP | S_IWGRP | S_IXGRP))) {
-            groupPerm = DIFFERENT_PERMS;    // not all files have the same permission for grop
+            groupPerm = DIFFERENT_PERMS;    // not all files have the same permission for group
         }
         if(otherPerm != DIFFERENT_PERMS && otherPerm != (fi_mode & (S_IROTH | S_IWOTH | S_IXOTH))) {
             otherPerm = DIFFERENT_PERMS;    // not all files have the same permission for other
@@ -301,14 +301,62 @@ void FilePropsDialog::initGeneralPage() {
         else {
             ui->location->clear();
         }
-        auto mtime = QDateTime::fromMSecsSinceEpoch(fileInfo->mtime() * 1000);
-        ui->lastModified->setText(mtime.toString(Qt::SystemLocaleShortDate));
-        auto atime = QDateTime::fromMSecsSinceEpoch(fileInfo->atime() * 1000);
-        ui->lastAccessed->setText(atime.toString(Qt::SystemLocaleShortDate));
+        // times
+        if(fileInfo->mtime() > 0) {
+            auto mtime = QDateTime::fromMSecsSinceEpoch(fileInfo->mtime() * 1000);
+            ui->lastModified->setText(mtime.toString(Qt::SystemLocaleShortDate));
+        }
+        else {
+            ui->lastModified->setText(tr("N/A"));
+        }
+        if(fileInfo->atime() > 0) {
+            auto atime = QDateTime::fromMSecsSinceEpoch(fileInfo->atime() * 1000);
+            ui->lastAccessed->setText(atime.toString(Qt::SystemLocaleShortDate));
+        }
+        else {
+            ui->lastAccessed->setText(tr("N/A"));
+        }
+        if(fileInfo->crtime() > 0) {
+            auto crtime = QDateTime::fromMSecsSinceEpoch(fileInfo->crtime() * 1000);
+            ui->created->setText(crtime.toString(Qt::SystemLocaleShortDate));
+        }
+        else {
+            ui->created->setText(tr("N/A"));
+        }
     }
     else {
         ui->fileName->setText(tr("Multiple Files"));
         ui->fileName->setEnabled(false);
+    }
+
+    // (common) emblem
+    connect(ui->emblemButton, &QAbstractButton::clicked, this, &FilePropsDialog::onEmblemButtonclicked);
+    connect(ui->clearEmblemButton, &QAbstractButton::clicked, this, &FilePropsDialog::onClearEmblemButtonclicked);
+    auto emblems = fileInfo->emblems();
+    if(!emblems.empty()) {
+        auto emblemIcon = emblems.front()->qicon();
+        if(!emblemIcon.isNull()) {
+            bool hasCommonEmblem(true);
+            if(!singleFile) {
+                auto emblemName = emblemIcon.name();
+                for(auto& fi: fileInfos_) {
+                    emblems = fi->emblems();
+                    if(!emblems.empty()) {
+                        auto icn = emblems.front()->qicon();
+                        if(!icn.isNull()) {
+                            if(icn.name() == emblemName) {
+                                continue;
+                            }
+                        }
+                    }
+                    hasCommonEmblem = false;
+                    break;
+                }
+            }
+            if(hasCommonEmblem) {
+                ui->emblemButton->setIcon(emblemIcon);
+            }
+        }
     }
 
     initApplications(); // init applications combo box
@@ -325,18 +373,40 @@ void FilePropsDialog::initGeneralPage() {
     // disk usage
     bool canShowDeviceUsage = false;
     if(fileInfo->dirPath()) { // skip directories like "search:///"
-        auto folder = Fm::Folder::fromPath(fileInfo->dirPath());
-        if(!folder->isLoaded() && fileInfo->isDir()) { // an empty space is right clicked
-            folder = Fm::Folder::fromPath(fileInfo->path());
+        auto folder = Fm::Folder::findByPath(fileInfo->dirPath());
+
+        // find out whether an empty space inside a folder is right clicked
+        if(singleFile && fileInfo->isDir()) {
+            if(folder == nullptr) {
+                // the parent is not open; we are inside the folder
+                folder = Fm::Folder::findByPath(fileInfo->path());
+            }
+            else {
+                // the parent is open but if its file info of the current path
+                // is different from "fileInfo", we are inside the folder
+                auto path = fileInfo->path();
+                auto files =  folder->files();
+                for(auto& file: files) {
+                    if(file->path() == path) {
+                        if(file != fileInfo) {
+                            folder = Fm::Folder::findByPath(fileInfo->path());
+                        }
+                        break;
+                    }
+                }
+            }
         }
-        guint64 free, total;
-        if(folder->getFilesystemInfo(&total, &free)) {
-            canShowDeviceUsage = true;
-            ui->progressBar->setValue(qRound(static_cast<qreal>((total - free) * 100) / static_cast<qreal>(total)));
-            ui->progressBar->setFormat(tr("%p% used"));
-            ui->spaceLabel->setText(tr("%1 Free of %2")
-                                    .arg(formatFileSize(free, false),
-                                         formatFileSize(total, false)));
+
+        if(folder != nullptr) {
+            guint64 free, total;
+            if(folder->getFilesystemInfo(&total, &free)) {
+                canShowDeviceUsage = true;
+                ui->progressBar->setValue(qRound(static_cast<qreal>((total - free) * 100) / static_cast<qreal>(total)));
+                ui->progressBar->setFormat(tr("%p% used"));
+                ui->spaceLabel->setText(tr("%1 Free of %2")
+                                        .arg(formatFileSize(free, false),
+                                             formatFileSize(total, false)));
+            }
         }
     }
     if(!canShowDeviceUsage) {
@@ -421,7 +491,7 @@ void FilePropsDialog::onIconButtonclicked() {
                                                           iconDir,
                                                           tr("Images (*.png *.xpm *.svg *.svgz )"));
     if(!iconPath.isEmpty()) {
-        QStringList parts = iconPath.split(QStringLiteral("/"), QString::SkipEmptyParts);
+        QStringList parts = iconPath.split(QStringLiteral("/"), Qt::SkipEmptyParts);
         if(!parts.isEmpty()) {
             QString iconName = parts.at(parts.count() - 1);
             int ln = iconName.lastIndexOf(QLatin1String("."));
@@ -432,6 +502,61 @@ void FilePropsDialog::onIconButtonclicked() {
             }
         }
     }
+}
+
+void FilePropsDialog::onEmblemButtonclicked() {
+    QString iconDir;
+    QString iconThemeName = QIcon::themeName();
+    QStringList icons = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation,
+                                                  QStringLiteral("icons"),
+                                                  QStandardPaths::LocateDirectory);
+    for (QStringList::ConstIterator it = icons.constBegin(); it != icons.constEnd(); ++it) {
+        QString iconThemeFolder = *it + QLatin1String("/") + iconThemeName;
+        if (QDir(iconThemeFolder).exists() && QFileInfo(iconThemeFolder).permission(QFileDevice::ReadUser)) {
+            // give priority to the "emblems" folder
+            const QString emblems = iconThemeFolder + QLatin1String("/emblems");
+            if (QDir(emblems).exists() && QFileInfo(emblems).permission(QFileDevice::ReadUser)) {
+                iconDir = emblems;
+            }
+            else {
+                iconDir = iconThemeFolder;
+            }
+            break;
+        }
+    }
+    if(iconDir.isEmpty()) {
+        iconDir = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
+                                         QStringLiteral("icons"),
+                                         QStandardPaths::LocateDirectory);
+        if(iconDir.isEmpty()) {
+            return;
+        }
+    }
+    const QString iconPath = QFileDialog::getOpenFileName(this, tr("Select an icon"),
+                                                          iconDir,
+                                                          tr("Images (*.png *.xpm *.svg *.svgz )"));
+    if(!iconPath.isEmpty()) {
+        QStringList parts = iconPath.split(QStringLiteral("/"), Qt::SkipEmptyParts);
+        if(!parts.isEmpty()) {
+            QString iconName = parts.at(parts.count() - 1);
+            int ln = iconName.lastIndexOf(QLatin1String("."));
+            if(ln > -1) {
+                iconName.remove(ln, iconName.length() - ln);
+                auto emblemIcon = QIcon::fromTheme(iconName);
+                ui->emblemButton->setIcon(emblemIcon);
+                // to show that the emblem should be set
+                ui->emblemButton->setText(QString());
+                ui->emblemButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            }
+        }
+    }
+}
+
+void FilePropsDialog::onClearEmblemButtonclicked() {
+    ui->emblemButton->setText(QStringLiteral("..."));
+    // to show that the emblem should be removed
+    ui->emblemButton->setIcon(QIcon());
+    ui->emblemButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
 }
 
 void FilePropsDialog::accept() {
@@ -533,14 +658,16 @@ void FilePropsDialog::accept() {
         if(QString::fromStdString(fileInfo->name()) != new_name) {
             auto path = fileInfo->path();
             auto parent_path = path.parent();
-            auto dest = parent_path.child(new_name.toLocal8Bit().constData());
-            Fm::GErrorPtr err;
-            if(!g_file_move(path.gfile().get(), dest.gfile().get(),
-                            GFileCopyFlags(G_FILE_COPY_ALL_METADATA |
-                                           G_FILE_COPY_NO_FALLBACK_FOR_MOVE |
-                                           G_FILE_COPY_NOFOLLOW_SYMLINKS),
-                            nullptr, nullptr, nullptr, &err)) {
-                QMessageBox::critical(this, QObject::tr("Error"), err.message());
+            if(parent_path) {
+                auto dest = parent_path.child(new_name.toLocal8Bit().constData());
+                Fm::GErrorPtr err;
+                if(!g_file_move(path.gfile().get(), dest.gfile().get(),
+                                GFileCopyFlags(G_FILE_COPY_ALL_METADATA |
+                                               G_FILE_COPY_NO_FALLBACK_FOR_MOVE |
+                                               G_FILE_COPY_NOFOLLOW_SYMLINKS),
+                                nullptr, nullptr, nullptr, &err)) {
+                    QMessageBox::critical(this, QObject::tr("Error"), err.message());
+                }
             }
         }
     }
@@ -548,13 +675,13 @@ void FilePropsDialog::accept() {
     // Custom (folder) icon
     if(!customIcon.isNull()) {
         bool reloadNeeded(false);
-        QString iconNamne = customIcon.name();
+        QString iconName = customIcon.name();
         for(auto& fi: fileInfos_) {
             std::shared_ptr<const Fm::IconInfo> icon = fi->icon();
-            if (!fi->icon() || fi->icon()->qicon().name() != iconNamne) {
+            if (!fi->icon() || fi->icon()->qicon().name() != iconName) {
                 auto dot_dir = CStrPtr{g_build_filename(fi->path().localPath().get(), ".directory", nullptr)};
                 GKeyFile* kf = g_key_file_new();
-                g_key_file_set_string(kf, "Desktop Entry", "Icon", iconNamne.toLocal8Bit().constData());
+                g_key_file_set_string(kf, "Desktop Entry", "Icon", iconName.toLocal8Bit().constData());
                 Fm::GErrorPtr err;
                 if (!g_key_file_save_to_file(kf, dot_dir.get(), &err)) {
                     QMessageBox::critical(this, QObject::tr("Custom Icon Error"), err.message());
@@ -565,13 +692,57 @@ void FilePropsDialog::accept() {
                 g_key_file_free(kf);
             }
         }
+        // FIXME: Reloading folders is an ugly solution but,
+        // for now, there is no other way of updating the icon.
         if(reloadNeeded) {
-            // since there can be only one parent dir, only one reload is needed
-            auto parent = fileInfo->path().parent();
-            if(parent.isValid()) {
-                auto folder = Fm::Folder::fromPath(parent);
-                if(folder->isLoaded()) {
+            auto folder = Fm::Folder::findByPath(fileInfo->path());
+            if(folder != nullptr) {
+                folder->reload();
+            }
+            if(fileInfo->dirPath()) {
+                folder = Fm::Folder::findByPath(fileInfo->dirPath());
+                if(folder != nullptr) {
                     folder->reload();
+                }
+            }
+        }
+    }
+
+    // Emblem icon
+    QString iconName;
+    if(ui->emblemButton->toolButtonStyle() == Qt::ToolButtonTextBesideIcon
+       && !ui->emblemButton->icon().isNull()) { // emblem is set
+        iconName = ui->emblemButton->icon().name();
+    }
+    if(ui->emblemButton->toolButtonStyle() == Qt::ToolButtonTextOnly // emblem is removed
+       || !iconName.isEmpty()) { // emblem is set
+
+        // NOTE: If a folder and its parent are both open (e.g., in different tabs),
+        // we should set the emblem for two file infos corresponding to the current path;
+        // otherwise, the emblem state will not be updated everywhere without reloading.
+
+        for(auto& fi: fileInfos_) {
+            fi->setEmblem(iconName);
+            if(fi->isDir()) {
+                auto folder = Fm::Folder::findByPath(fi->path());
+                if(folder != nullptr && folder->isValid() // the folder itself is open
+                   && folder->info() != fi) {
+                    folder->info()->setEmblem(iconName, false);
+                }
+            }
+        }
+        if(singleFile && fileInfo->dirPath() && fileInfo->isDir()) {
+            auto parent = Fm::Folder::findByPath(fileInfo->dirPath());
+            if(parent != nullptr) { // the parent folder is open
+                auto path = fileInfo->path();
+                auto files =  parent->files();
+                for(auto& file: files) {
+                    if(file->path() == path) {
+                        if(file != fileInfo) { // an empty space inside the folder was right clicked
+                            file->setEmblem(iconName, false);
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -589,9 +760,10 @@ void FilePropsDialog::initOwner() {
             ui->ownerGroup->setText(gidToName(gid));
         }
 
-        if(geteuid() != 0) { // on local filesystems, only root can do chown.
+        uid_t userId = geteuid();
+        if(userId != 0) { // on local filesystems, only root can do chown.
             ui->owner->setEnabled(false);
-            ui->ownerGroup->setEnabled(false);
+            ui->ownerGroup->setEnabled(userId == uid);
         }
     }
 }

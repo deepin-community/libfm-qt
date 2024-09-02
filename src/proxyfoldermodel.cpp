@@ -21,6 +21,7 @@
 #include "proxyfoldermodel.h"
 #include "foldermodel.h"
 #include <QCollator>
+#include <QApplication>
 
 namespace Fm {
 
@@ -45,7 +46,7 @@ ProxyFolderModel::~ProxyFolderModel() {
         // tell the source model that we don't need the thumnails anymore
         if(srcModel) {
             srcModel->releaseThumbnails(thumbnailSize_);
-            disconnect(srcModel, SIGNAL(thumbnailLoaded(QModelIndex, int)));
+            disconnect(srcModel, &FolderModel::thumbnailLoaded, this, &ProxyFolderModel::onThumbnailLoaded);
         }
     }
 }
@@ -54,12 +55,6 @@ void ProxyFolderModel::setSourceModel(QAbstractItemModel* model) {
     if(model == sourceModel()) // avoid setting the same model twice
         return;
     FolderModel* oldSrcModel = static_cast<FolderModel*>(sourceModel());
-#if (QT_VERSION == QT_VERSION_CHECK(5,11,0))
-    // workaround for Qt-5.11 bug https://bugreports.qt.io/browse/QTBUG-68581
-    if(oldSrcModel) {
-        disconnect(oldSrcModel, SIGNAL(destroyed()), this, SLOT(_q_sourceModelDestroyed()));
-    }
-#endif
     if(model) {
         // we only support Fm::FolderModel
         Q_ASSERT(model->inherits("Fm::FolderModel"));
@@ -67,7 +62,7 @@ void ProxyFolderModel::setSourceModel(QAbstractItemModel* model) {
         if(showThumbnails_ && thumbnailSize_ != 0) { // if we're showing thumbnails
             if(oldSrcModel) { // we need to release cached thumbnails for the old source model
                 oldSrcModel->releaseThumbnails(thumbnailSize_);
-                disconnect(oldSrcModel, SIGNAL(thumbnailLoaded(QModelIndex, int)));
+                disconnect(oldSrcModel, &FolderModel::thumbnailLoaded, this, &ProxyFolderModel::onThumbnailLoaded);
             }
             FolderModel* newSrcModel = static_cast<FolderModel*>(model);
             if(newSrcModel) { // tell the new source model that we want thumbnails of this size
@@ -179,6 +174,16 @@ bool ProxyFolderModel::lessThan(const QModelIndex& left, const QModelIndex& righ
                 return leftInfo->mtime() < rightInfo->mtime();
             }
             break;
+        case FolderModel::ColumnFileCrTime:
+            if(leftInfo->crtime() != rightInfo->crtime()) { // quint64
+                return leftInfo->crtime() < rightInfo->crtime();
+            }
+            break;
+        case FolderModel::ColumnFileDTime:
+            if(leftInfo->dtime() != rightInfo->dtime()) { // quint64
+                return leftInfo->dtime() < rightInfo->dtime();
+            }
+            break;
         case FolderModel::ColumnFileSize:
             if(leftInfo->size() != rightInfo->size()) { // quint64
                 return leftInfo->size() < rightInfo->size();
@@ -195,8 +200,14 @@ bool ProxyFolderModel::lessThan(const QModelIndex& left, const QModelIndex& righ
             for(;;) {
                 leftEnd = leftText.indexOf(QLatin1Char('.'), leftStart);
                 rightEnd = rightText.indexOf(QLatin1Char('.'), rightStart);
-                comp = collator_.compare(leftText.mid(leftStart, leftEnd - leftStart),
-                                         rightText.mid(rightStart, rightEnd - rightStart));
+                QStringRef lefPart = leftText.midRef(leftStart, leftEnd - leftStart);
+                QStringRef rightPart = rightText.midRef(rightStart, rightEnd - rightStart);
+                comp = collator_.compare(lefPart, rightPart);
+                if(comp == 0) {
+                    // This is a workaround for QCollator's behavior that, for example,
+                    // considers "A0" and "A00" equal when the numeric mode is enabled.
+                    comp = lefPart.size() - rightPart.size();
+                }
                 if(comp != 0 || leftEnd == -1 || rightEnd == -1) {
                     break;
                 }
@@ -259,9 +270,9 @@ void ProxyFolderModel::setShowThumbnails(bool show) {
                 connect(srcModel, &FolderModel::thumbnailLoaded, this, &ProxyFolderModel::onThumbnailLoaded);
             }
             else { // turn off thumbnails
-                // free cached old thumbnails in souce model
+                // free cached old thumbnails in source model
                 srcModel->releaseThumbnails(thumbnailSize_);
-                disconnect(srcModel, SIGNAL(thumbnailLoaded(QModelIndex, int)));
+                disconnect(srcModel, &FolderModel::thumbnailLoaded, this, &ProxyFolderModel::onThumbnailLoaded);
             }
             // reload all items, FIXME: can we only update items previously having thumbnails
             Q_EMIT dataChanged(index(0, 0), index(rowCount() - 1, 0));
@@ -270,6 +281,10 @@ void ProxyFolderModel::setShowThumbnails(bool show) {
 }
 
 void ProxyFolderModel::setThumbnailSize(int size) {
+    // since we set the device pixel ratio of the thumbnail image when
+    // storing it as the decoration data, we need a bigger size here
+    size  = qRound(size * qApp->devicePixelRatio());
+
     if(size != thumbnailSize_) {
         FolderModel* srcModel = static_cast<FolderModel*>(sourceModel());
         if(showThumbnails_ && srcModel) {
@@ -299,6 +314,7 @@ QVariant ProxyFolderModel::data(const QModelIndex& index, int role) const {
             QModelIndex srcIndex = mapToSource(index);
             QImage image = srcModel->thumbnailFromIndex(srcIndex, thumbnailSize_);
             if(!image.isNull()) { // if we got a thumbnail of the desired size, use it
+                image.setDevicePixelRatio(qApp->devicePixelRatio());
                 return QVariant(image);
             }
         }

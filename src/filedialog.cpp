@@ -34,7 +34,8 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     acceptMode_{QFileDialog::AcceptOpen},
     confirmOverwrite_{true},
     modelFilter_{this},
-    noItemTooltip_{false} {
+    noItemTooltip_{false},
+    scrollPerPixel_{true} {
 
     ui->setupUi(this);
 
@@ -51,7 +52,7 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     connect(ui->sidePane, &SidePane::hiddenPlaceSet, this, &FileDialog::onSettingHiddenPlace);
 
     // folder view
-    proxyModel_ = new ProxyFolderModel(this);
+    proxyModel_ = new ProxyFolderModel();
     proxyModel_->sort(FolderModel::ColumnFileName, Qt::AscendingOrder);
     proxyModel_->setThumbnailSize(64);
     proxyModel_->setShowThumbnails(true);
@@ -98,11 +99,6 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     ui->fileTypeCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     ui->fileTypeCombo->setCurrentIndex(0);
 
-    QShortcut* shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_H), this);
-    connect(shortcut, &QShortcut::activated, [this]() {
-        proxyModel_->setShowHidden(!proxyModel_->showHidden());
-    });
-
     // setup toolbar buttons
     auto toolbar = new QToolBar(this);
     // back button
@@ -142,6 +138,12 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     auto newFolderAction = toolbar->addAction(QIcon::fromTheme(QStringLiteral("folder-new")), tr("Create Folder"));
     connect(newFolderAction, &QAction::triggered, this, &FileDialog::onNewFolder);
     toolbar->addSeparator();
+
+    // a shortcut for deselecting all items
+    QShortcut* shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_D), this);
+    connect(shortcut, &QShortcut::activated, [this]() {
+        ui->folderView->selectionModel()->clearSelection();
+    });
 
     // Options menu
     QMenu* menu = new QMenu(toolbar);
@@ -200,6 +202,18 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
 
     menu->addSeparator();
 
+    // showing hidden files
+    auto showHiddenAction = menu->addAction(tr("Show Hidden"));
+    showHiddenAction->setCheckable(true);
+    connect(showHiddenAction, &QAction::triggered, [this](bool checked) {
+        proxyModel_->setShowHidden(checked);
+    });
+    // also add a separate shortcut for it
+    shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_H), this);
+    connect(shortcut, &QShortcut::activated, [this]() {
+        proxyModel_->setShowHidden(!proxyModel_->showHidden());
+    });
+
     // thumbnail and tooltip actions
     auto thumbnailsAction = menu->addAction(tr("Show Thumbnails"));
     thumbnailsAction->setCheckable(true);
@@ -211,9 +225,20 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     connect(tooltipsAction, &QAction::triggered, [this](bool checked) {
         setNoItemTooltip(!checked);
     });
-    connect(menu, &QMenu::aboutToShow, [this, thumbnailsAction, tooltipsAction]() {
-        thumbnailsAction->setChecked(proxyModel_ ? proxyModel_->showThumbnails() : true);
+
+    // per-pixel action
+    auto perPixelAction = menu->addAction(tr("Smooth Scrolling"));
+    perPixelAction->setCheckable(true);
+    connect(perPixelAction, &QAction::triggered, [this](bool checked) {
+        setScrollPerPixel(checked);
+    });
+
+    // set the check states when the menu is about to appear
+    connect(menu, &QMenu::aboutToShow, [this, showHiddenAction, thumbnailsAction, tooltipsAction, perPixelAction]() {
+        showHiddenAction->setChecked(proxyModel_->showHidden());
+        thumbnailsAction->setChecked(proxyModel_->showThumbnails());
         tooltipsAction->setChecked(!noItemTooltip_);
+        perPixelAction->setChecked(scrollPerPixel_);
     });
 
     // Options menu button
@@ -247,27 +272,45 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
 
 FileDialog::~FileDialog() {
     freeFolder();
+    delete proxyModel_;
+    if(folderModel_) {
+        folderModel_->unref();
+    }
 }
 
 bool FileDialog::eventFilter(QObject* watched, QEvent* event) {
     if (watched == ui->folderView->childView()->viewport() && event->type() == QEvent::ToolTip) {
         return true;
     }
-    // Here we make Tab key switch the focus from the main view to the name entry
-    // and BackTab do the reverse because QWidget::setTabOrder() cannot do that.
     if(event->type() == QEvent::KeyPress) {
         if(QKeyEvent *ke = static_cast<QKeyEvent*>(event)) {
             if(watched == ui->folderView->childView() && ui->folderView->childView()->hasFocus()
-               && ke->key() == Qt::Key_Tab && ke->modifiers() == Qt::NoModifier) {
-                ui->fileName->setFocus();
-                // as in Qt -> QLineEdit::focusInEvent()
-                if(!ui->fileName->hasSelectedText()) {
-                    ui->fileName->selectAll();
+               && ke->modifiers() == Qt::NoModifier) {
+                if(ke->key() == Qt::Key_Tab) {
+                    // Here we make Tab key switch the focus from the main view to the name entry
+                    // and BackTab do the reverse because QWidget::setTabOrder() cannot do that.
+                    ui->fileName->setFocus();
+                    // as in Qt -> QLineEdit::focusInEvent()
+                    if(!ui->fileName->hasSelectedText()) {
+                        ui->fileName->selectAll();
+                    }
+                    return true;
                 }
-                return true;
+                else if(ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {
+                    // Do not accept the dialog by pressing Enter/Return on the current item.
+                    // This prevents double acceptance and its side effects.
+                    QItemSelectionModel* selModel = ui->folderView->selectionModel();
+                    QModelIndex cur = selModel->currentIndex();
+                    if(cur.isValid() && selModel->isSelected(cur)) {
+                        if(auto file = proxyModel_->fileInfoFromIndex(cur)) {
+                            onFileClicked(FolderView::ActivatedClick, file); // activate the item
+                            return true;
+                        }
+                    }
+                }
             }
-            if(watched == ui->fileName && ui->fileName->hasFocus()
-               && ke->key() == Qt::Key_Backtab) {
+            else if(watched == ui->fileName && ui->fileName->hasFocus()
+                    && ke->key() == Qt::Key_Backtab) {
                 ui->folderView->childView()->setFocus();
                 return true;
             }
@@ -400,6 +443,11 @@ void FileDialog::setNoItemTooltip(bool noItemTooltip) {
     }
 }
 
+void FileDialog::setScrollPerPixel(bool perPixel) {
+    scrollPerPixel_ = perPixel;
+    ui->folderView->setScrollPerPixel(scrollPerPixel_);
+}
+
 int FileDialog::bigIconSize() const {
     return ui->folderView->iconSize(FolderView::IconMode).width();
 }
@@ -431,6 +479,14 @@ void FileDialog::setThumbnailIconSize(int size) {
     }
 }
 
+QList<int> FileDialog::getHiddenColumns() const {
+    return ui->folderView->getHiddenColumns();
+}
+
+void FileDialog::setHiddenColumns(const QList<int> &columns) {
+    ui->folderView->setHiddenColumns(columns);
+}
+
 // This should always be used instead of getting text directly from the entry.
 QStringList FileDialog::parseNames() const {
     // parse the file names from the text entry
@@ -446,11 +502,7 @@ QStringList FileDialog::parseNames() const {
            && (firstQuote == 0 || fileNames.at(firstQuote - 1) != QLatin1Char('\\'))
            && fileNames.at(lastQuote - 1) != QLatin1Char('\\')) {
            // split the names
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
             QRegularExpression sep{QStringLiteral("\"\\s+\"")};  // separated with " "
-#else
-            QRegExp sep{QStringLiteral("\"\\s+\"")};  // separated with " "
-#endif
             parsedNames = fileNames.mid(firstQuote + 1, lastQuote - firstQuote - 1).split(sep);
             parsedNames.replaceInStrings(QLatin1String("\\\""), QLatin1String("\""));
         }
@@ -478,7 +530,7 @@ QString FileDialog::suffix(bool checkDefaultSuffix) const {
     if(checkDefaultSuffix && !defaultSuffix_.isEmpty()) {
         return defaultSuffix_;
     }
-    // in the save mode, still try to make a suffix out of the currrent name filter
+    // in the save mode, still try to make a suffix out of the current name filter
     if(acceptMode_ != QFileDialog::AcceptOpen) {
         auto left = currentNameFilter_.lastIndexOf(QLatin1Char('('));
         if(left != -1) {
@@ -486,10 +538,13 @@ QString FileDialog::suffix(bool checkDefaultSuffix) const {
             auto right = currentNameFilter_.indexOf(QLatin1Char(')'), left);
             if(right != -1) {
                 QString nameFilter = currentNameFilter_.mid(left, right - left);
-                QString suffix = nameFilter.simplified().split(QLatin1Char(' '), QString::SkipEmptyParts).at(0);
+                QString suffix = nameFilter.simplified().split(QLatin1Char(' '), Qt::SkipEmptyParts).at(0);
                 left = suffix.indexOf(QLatin1Char('.')); // it can be like ".tar.xz"
                 if(left != -1 && suffix.size() - left > 1) {
-                    return suffix.right(suffix.size() - left - 1);
+                    suffix = suffix.right(suffix.size() - left - 1);
+                    if(suffix.indexOf(QRegularExpression(QStringLiteral("[^\\w\\.]"))) == -1) {
+                        return suffix;
+                    }
                 }
             }
         }
@@ -920,9 +975,9 @@ void FileDialog::onFileInfoJobFinished() {
                     break;
                 }
             }
-            else if(file->isDir() || file->isShortcut()) {
+            else if(file->isDir() || (file->isShortcut() && !file->isDesktopEntry())) {
                 // we're selecting files, but the selected file path refers to a dir or shortcut (such as computer:///)
-                error = tr("\"%1\" is not a file").arg(QString::fromUtf8(path.displayName().get()));;
+                error = tr("\"%1\" is not a file").arg(QString::fromUtf8(path.displayName().get()));
                 break;
             }
         }
@@ -1109,7 +1164,7 @@ void FileDialog::setMimeTypeFilters(const QStringList& filters) {
                 nameFilter += suffix;
                 nameFilter += QLatin1Char(' ');
             }
-            nameFilter[nameFilter.length() - 1] = ')';
+            nameFilter[nameFilter.length() - 1] = QLatin1Char(')');
         }
         nameFilters << nameFilter;
     }
@@ -1269,11 +1324,7 @@ bool FileDialog::FileDialogFilter::filterAcceptsRow(const ProxyFolderModel* /*mo
     bool nameMatched = false;
     auto& name = info->displayName();
     for(const auto& pattern: patterns_) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
         if(name.indexOf(pattern) == 0) {
-#else
-        if(pattern.exactMatch(name)) {
-#endif
             nameMatched = true;
             break;
         }
@@ -1299,13 +1350,8 @@ void FileDialog::FileDialogFilter::update() {
     // parse the "*.ext1 *.ext2 *.ext3 ..." list into QRegularExpression objects
     const auto globs = nameFilter.simplified().split(QLatin1Char(' '));
     for(const auto& glob: globs) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
-        patterns_.emplace_back(QRegularExpression(QStringLiteral("\\A(?:")
-                                                    + QRegularExpression::wildcardToRegularExpression(glob)
-                                                    + QStringLiteral(")\\z"), QRegularExpression::CaseInsensitiveOption));
-#else
-        patterns_.emplace_back(QRegExp(glob, Qt::CaseInsensitive, QRegExp::Wildcard));
-#endif
+        patterns_.emplace_back(QRegularExpression(QRegularExpression::wildcardToRegularExpression(glob),
+                                                  QRegularExpression::CaseInsensitiveOption));
     }
 }
 

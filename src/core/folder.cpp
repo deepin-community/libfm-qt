@@ -62,9 +62,13 @@ Folder::Folder(const FilePath& path): Folder() {
 }
 
 Folder::~Folder() {
+    const char* folderId = nullptr;
     if(dirMonitor_) {
         g_signal_handlers_disconnect_by_data(dirMonitor_.get(), this);
         dirMonitor_.reset();
+        if(dirInfo_) {
+            folderId = dirInfo_->fileId();
+        }
     }
 
     if(dirlist_job) {
@@ -87,6 +91,20 @@ Folder::~Folder() {
     auto it = cache_.find(dirPath_);
     if(it != cache_.end()) {
         cache_.erase(it);
+    }
+
+   // Fully recreate file monitors of folders that have the same target
+   // by reloading them. See reload() for why this workaround is needed.
+    if(folderId != nullptr) {
+        it = cache_.begin();
+        while(it != cache_.end()) {
+            auto folder = it->second.lock();
+            if(folder && folder->hasFileMonitor() && folder->isValid()
+               && folder->info()->fileId() == folderId) {
+                QTimer::singleShot(0, folder.get(), &Folder::reallyReload);
+            }
+            ++it;
+        }
     }
 }
 
@@ -404,7 +422,7 @@ void Folder::eventFileDeleted(const FilePath& path) {
     bool deleted = true;
     // qDebug() << "delete " << path.baseName().get();
     // G_LOCK(lists);
-    /* WARNING: If the file is in the addition queue, we shouldn not remove it from that queue
+    /* WARNING: If the file is in the addition queue, we should not remove it from that queue
        and ignore its deletion because it may have been added by the directory list job, in
        which case, ignoring an addition-deletion sequence would result in a nonexistent file. */
     if(std::find(paths_to_del.cbegin(), paths_to_del.cend(), path) == paths_to_del.cend()) {
@@ -514,7 +532,7 @@ void Folder::onDirListFinished() {
     const auto& infos = job->files();
 
     // with "search://", there is no update for infos and all of them should be added
-    if(strcmp(dirPath_.uriScheme().get(), "search") == 0) {
+    if(dirPath_.hasUriScheme("search")) {
         files_to_add = infos;
         for(auto& file: files_to_add) {
             files_[file->path().baseName().get()] = file;
@@ -644,6 +662,26 @@ void free_dirlist_job(FmFolder* folder) {
 
 
 void Folder::reload() {
+    if(dirlist_job) {
+        dirlist_job->cancel();
+    }
+    // NOTE: Because of a bug in GLib, if GFileMonitor is unreffed here, the monitors
+    // of other folders that have the same target will stop emitting signals (also,
+    // see https://gitlab.gnome.org/GNOME/glib/-/issues/746). As a workaround, we can
+    // either find and reload those folders here or unref the old monitor only after
+    // the new one is created. The second method is more frugal.
+    GFileMonitor* fm = nullptr;
+    if(dirMonitor_) {
+        g_signal_handlers_disconnect_by_data(dirMonitor_.get(), this);
+        fm = dirMonitor_.release();
+    }
+    reallyReload();
+    if(fm) {
+        g_object_unref(fm);
+    }
+}
+
+void Folder::reallyReload() {
     // cancel in-progress jobs if there are any
     if(dirlist_job) {
         dirlist_job->cancel();

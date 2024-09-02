@@ -47,6 +47,7 @@ typedef struct _FmConfig            FmConfig;
 #define     FM_CONFIG_DEFAULT_SHOW_THUMBNAIL    TRUE
 #define     FM_CONFIG_DEFAULT_THUMBNAIL_LOCAL   TRUE
 #define     FM_CONFIG_DEFAULT_THUMBNAIL_MAX     2048
+#define     FM_CONFIG_DEFAULT_EXTERNAL_THUMBNAIL_MAX -1
 
 #define     FM_CONFIG_DEFAULT_FORCE_S_NOTIFY    TRUE
 #define     FM_CONFIG_DEFAULT_BACKUP_HIDDEN     TRUE
@@ -80,7 +81,8 @@ typedef struct _FmConfig            FmConfig;
  * @small_icon_size: size of small icons
  * @pane_icon_size: size of side pane icons
  * @thumbnail_size: size of thumbnail icons
- * @thumbnail_max: show thumbnails only for files not bigger than this, in KB or Kpix
+ * @thumbnail_max: internally create thumbnails only for images not bigger than this, in KB or Kpix
+ * @external_thumbnail_max: allow external thumbnail creation only for files not bigger than this, in KB or Kpix
  * @auto_selection_delay: (since 1.2.0) delay for autoselection in single-click mode, in ms
  * @drop_default_action: (since 1.2.0) default action on drop (see #FmDndDestDropAction)
  * @single_click: single click to open file
@@ -112,7 +114,7 @@ typedef struct _FmConfig            FmConfig;
  * @defer_content_test: (since 1.2.0) defer test for content type on folder loading
  * @quick_exec: (since 1.2.0) don't ask user for action on executable launch
  * @modules_blacklist: (since 1.2.0) list of modules (mask in form "type:name") to never load
- * @modules_whitelist: (since 1.2.0) list of excemptions from @modules_blacklist
+ * @modules_whitelist: (since 1.2.0) list of exemptions from @modules_blacklist
  * @list_view_size_units: (since 1.2.0) file size units in list view: h, k, M, G
  * @format_cmd: (since 1.2.0) command to format the volume (device will be added)
  * @smart_desktop_autodrop: (since 1.2.0) enable "smart shortcut" auto-action for ~/Desktop
@@ -133,6 +135,7 @@ struct _FmConfig
     gint pane_icon_size;
     gint thumbnail_size;
     gint thumbnail_max;
+    gint external_thumbnail_max;
     gint auto_selection_delay;
     gint drop_default_action;
 

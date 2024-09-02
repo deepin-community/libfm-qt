@@ -29,6 +29,7 @@
 #include "filemenu.h"
 #include "foldermenu.h"
 #include "filelauncher.h"
+#include "fileoperation.h"
 #include "utilities.h"
 #include <QTimer>
 #include <QDate>
@@ -49,7 +50,6 @@
 #include <xcb/xcb.h> // for XDS support
 #include "xdndworkaround.h" // for XDS support
 #include "folderview_p.h"
-#include "utilities.h"
 
 #include <algorithm>
 
@@ -70,6 +70,10 @@ FolderViewListView::FolderViewListView(QWidget* parent):
     setEditTriggers(QAbstractItemView::NoEditTriggers);
     setMouseTracking(true); // needed with selection corner icon
 
+    // for smooth scrolling (it is Qt's default)
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+
     viewport()->setAcceptDrops(true);
     /* If the list view is already visible, setMovement() will lay out items again with delay
        (see Qt, QListView::setMovement(), d->doDelayedItemsLayout()) and thus drop events will
@@ -81,6 +85,7 @@ FolderViewListView::~FolderViewListView() {
 }
 
 void FolderViewListView::startDrag(Qt::DropActions supportedActions) {
+    mouseLeftPressed_ = false; // see FolderViewListView::mouseMoveEvent
     if(movement() != Static) {
         QListView::startDrag(supportedActions);
     }
@@ -102,13 +107,29 @@ void FolderViewListView::mousePressEvent(QMouseEvent* event) {
     // use the selection corner only with the extended and multiple selection modes
     // and change the mode to multiple temporarily if it is extended
     QAbstractItemView::SelectionMode sm = selectionMode();
-    if(sm == QAbstractItemView::ExtendedSelection
-       && cursorOnSelectionCorner_ && event->button() == Qt::LeftButton) {
+    bool cornerSelection(cursorOnSelectionCorner_ && event->button() == Qt::LeftButton);
+    if(sm == QAbstractItemView::ExtendedSelection && cornerSelection) {
         setSelectionMode(QAbstractItemView::MultiSelection);
     }
     QListView::mousePressEvent(event);
     if (sm == QAbstractItemView::ExtendedSelection) {
-        setSelectionMode(sm); // restore the selection mode
+        if(cornerSelection) {
+            setSelectionMode(sm); // restore the selection mode
+        }
+        else {
+            // NOTE: Qt sometimes does not respect the current item sorting with a Shift selection.
+            // That seems like a problem in QListView. As a workaround, the selection is sorted here.
+            if(QApplication::keyboardModifiers() & Qt::ShiftModifier) {
+                auto selModel = selectionModel();
+                auto sel = selModel->selection();
+                if(!sel.isEmpty()) {
+                    std::sort(sel.begin(), sel.end(), [](QItemSelectionRange a, QItemSelectionRange b) {
+                        return a.top() < b.top();
+                    });
+                    selModel->select(sel, QItemSelectionModel::SelectCurrent);
+                }
+            }
+        }
     }
     static_cast<FolderView*>(parent())->childMousePressEvent(event);
 }
@@ -196,7 +217,7 @@ QModelIndex FolderViewListView::indexAt(const QPoint& point) const {
 
 // NOTE:
 // QListView has a problem which I consider a bug or a design flaw.
-// When you set movement property to Static, theoratically the icons
+// When you set movement property to Static, theoretically the icons
 // should not be movable. However, if you turned on icon mode,
 // the icons becomes freely movable despite the value of movement is Static.
 // To overcome this bug, we override all drag handling methods, and
@@ -282,6 +303,19 @@ QModelIndex FolderViewListView::moveCursor(CursorAction cursorAction, Qt::Keyboa
     return QListView::moveCursor(cursorAction, modifiers);
 }
 
+void FolderViewListView::currentChanged(const QModelIndex &current, const QModelIndex &previous) {
+    QListView::currentChanged(current, previous);
+    if(viewMode() == QListView::ListMode && current.isValid()) {
+        // QListView has a bug that may reset the horizontal scrollbar
+        // in the list mode when the current item changes. This is a workaround.
+        QTimer::singleShot(0, this, [this] {
+            if(currentIndex().isValid()) {
+                scrollTo(currentIndex());
+            }
+        });
+    }
+}
+
 void FolderViewListView::activation(const QModelIndex& index) {
     if(activationAllowed_) {
         Q_EMIT activatedFiltered(index);
@@ -307,8 +341,7 @@ FolderViewTreeView::FolderViewTreeView(QWidget* parent):
     QTreeView(parent),
     doingLayout_(false),
     layoutTimer_(nullptr),
-    activationAllowed_(true),
-    ctrlDragSelectionFlag_(QItemSelectionModel::NoUpdate) {
+    activationAllowed_(true) {
 
     header()->setSectionResizeMode(QHeaderView::Interactive);
     header()->setStretchLastSection(true);
@@ -369,7 +402,7 @@ void FolderViewTreeView::setHiddenColumns(const QSet<int> &columns) {
 }
 
 void FolderViewTreeView::headerContextMenu(const QPoint &p) {
-    QMenu menu;
+    QMenu menu(header()); // a parent is needed under Wayland for correct positioning
     QAction *action = menu.addAction (tr("Auto-resize columns"));
     action->setCheckable(true);
     action->setChecked(customColumnWidths_.isEmpty());
@@ -470,17 +503,6 @@ void FolderViewTreeView::mousePressEvent(QMouseEvent* event) {
         // or removed later, when the cursor moves
         QAbstractItemView::mousePressEvent(event);
         mousePressPoint_ = event->pos() + QPoint(horizontalOffset(), verticalOffset());
-        QModelIndex index = indexAt(event->pos());
-        if(index.isValid()) {
-            Qt::KeyboardModifiers modifiers = QApplication::keyboardModifiers();
-            const bool shiftKeyPressed = modifiers & Qt::ShiftModifier;
-            const bool controlKeyPressed = modifiers & Qt::ControlModifier;
-            const bool rightButtonPressed = event->button() & Qt::RightButton;
-            const bool indexIsSelected = selectionModel()->isSelected(index);
-            if(controlKeyPressed && !shiftKeyPressed && !rightButtonPressed) {
-                ctrlDragSelectionFlag_ = indexIsSelected ? QItemSelectionModel::Deselect : QItemSelectionModel::Select;
-            }
-        }
     }
     else {
         QTreeView::mousePressEvent(event);
@@ -497,7 +519,9 @@ void FolderViewTreeView::mouseMoveEvent(QMouseEvent* event) {
         if(selectionMode() == QAbstractItemView::ExtendedSelection
             && (event->buttons() & Qt::LeftButton)
             && (rubberBandRect_.isValid()
-                || !indexAt(mousePressPoint_ - QPoint(horizontalOffset(), verticalOffset())).isValid())) {
+                || !indexAt(mousePressPoint_ - QPoint(horizontalOffset(), verticalOffset())).isValid()
+                // also, start the rubberband selection from any column other than the name column
+                || columnAt(mousePressPoint_.x() - horizontalOffset()) != FolderModel::ColumnFileName)) {
             QAbstractItemView::mouseMoveEvent(event);
 
             // set rubberband rectangle
@@ -522,10 +546,6 @@ void FolderViewTreeView::mouseMoveEvent(QMouseEvent* event) {
                 command = QItemSelectionModel::Clear|QItemSelectionModel::SelectCurrent;
             }
             command |= QItemSelectionModel::Rows;
-            if(ctrlDragSelectionFlag_ != QItemSelectionModel::NoUpdate && command.testFlag(QItemSelectionModel::Toggle)) {
-                command &= ~QItemSelectionModel::Toggle;
-                command |= ctrlDragSelectionFlag_;
-            }
             QRect selectionRect = QRect(rubberBandRect_.topLeft(), rubberBandRect_.bottomRight());
             setSelection(selectionRect, command);
         }
@@ -543,17 +563,23 @@ void FolderViewTreeView::mouseMoveEvent(QMouseEvent* event) {
 void FolderViewTreeView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags command) {
     if(selectionMode() == QAbstractItemView::ExtendedSelection
        && model() && state() == QAbstractItemView::DragSelectingState
-       && rubberBandRect_.isValid()) { // rubberband selection
+       && !rubberBandRect_.isNull()) { // rubberband selection
         QRect r = rubberBandRect_.adjusted(-horizontalOffset(), -verticalOffset(),
                                             -horizontalOffset(), -verticalOffset());
-        r.setLeft(qMax(0, r.left()));
+        bool rtl(layoutDirection() == Qt::RightToLeft);
+        if (rtl) {
+            r.setRight(qMin(viewport()->contentsRect().right(), r.right()));
+        }
+        else {
+            r.setLeft(qMax(viewport()->contentsRect().left(), r.left()));
+        }
         r.setTop(qMax(-verticalOffset(), r.top()));
-        QModelIndex top = indexAt(r.topLeft());
+        QModelIndex top = indexAt(rtl ? r.topRight() : r.topLeft());
         QItemSelection selection;
         if(top.isValid()) {
             top = top.sibling(top.row(), 0);
              if(top.isValid()) {
-                QModelIndex bottom = indexAt(r.bottomLeft());
+                QModelIndex bottom = indexAt(rtl ? r.bottomRight() : r.bottomLeft());
                 if(!bottom.isValid()) {
                     bottom = model()->index(model()->rowCount() - 1, 0);
                 }
@@ -591,7 +617,7 @@ void FolderViewTreeView::dropEvent(QDropEvent* e) {
 
 // the default list mode of QListView handles column widths
 // very badly (worse than gtk+) and it's not very flexible.
-// so, let's handle column widths outselves.
+// so, let's handle column widths ourselves.
 void FolderViewTreeView::layoutColumns() {
     // qDebug("layoutColumns");
     if(!model()) {
@@ -606,7 +632,7 @@ void FolderViewTreeView::layoutColumns() {
     int numCols = headerView->count();
     if(numCols > 0) {
         int desiredWidth = 0;
-        int* widths = new int[numCols]; // array to store the widths every column needs
+        QList<int> widths; // to store the widths that the columns need
         QStyleOptionHeader opt;
         opt.initFrom(headerView);
         opt.fontMetrics = QFontMetrics(font());
@@ -624,13 +650,13 @@ void FolderViewTreeView::layoutColumns() {
                 }
             }
         }
-        int column;
-        for(column = 0; column < numCols; ++column) {
+        for(int column = 0; column < numCols; ++column) {
             int columnId = headerView->logicalIndex(column);
 
             if(!isTrash && columnId == dTimeColumn) {
                 // hide the deletion time column if this isn't trash
                 headerView->setSectionHidden(columnId, true);
+                widths.append(headerView->minimumSectionSize());
                 continue;
             }
 
@@ -642,28 +668,31 @@ void FolderViewTreeView::layoutColumns() {
                     wasHidden = true;
                 }
                 else {
+                    widths.append(headerView->minimumSectionSize());
                     continue;
                 }
             }
             else if(hiddenColumns_.contains(columnId)
                     && columnId != filenameColumn) { // never hide the name column
                 headerView->setSectionHidden(columnId, true);
+                widths.append(headerView->minimumSectionSize());
                 continue;
             }
 
+            int w;
             if(customColumnWidths_.size() > column) {
                 // see FolderView::setCustomColumnWidths for the meaning of custom width <= 0
                 if(customColumnWidths_.at(column) > 0) {
-                    widths[column] = qMax(customColumnWidths_.at(column), headerView->minimumSectionSize());
+                    w = qMax(customColumnWidths_.at(column), headerView->minimumSectionSize());
                 }
                 else {
                     if(wasHidden) {
                         // WARNING: When a section is shown in the interactive mode, Qt gives
                         // a huge width to it. As a workaround, the width is set to the minimum here.
-                        customColumnWidths_[column] = widths[column] = headerView->minimumSectionSize();
+                        customColumnWidths_[column] = w = headerView->minimumSectionSize();
                     }
                     else {
-                        customColumnWidths_[column] = widths[column] = headerView->sectionSize(columnId);
+                        customColumnWidths_[column] = w = headerView->sectionSize(columnId);
                     }
                     Q_EMIT columnResizedByUser(column, customColumnWidths_.at(column));
                 }
@@ -677,22 +706,26 @@ void FolderViewTreeView::layoutColumns() {
                     }
                 }
                 opt.section = columnId;
-                widths[column] = qMax(sizeHintForColumn(columnId),
-                                    style()->sizeFromContents(QStyle::CT_HeaderSection, &opt, QSize(),
-                                                                headerView).width());
+                w = qMax(sizeHintForColumn(columnId),
+                         style()->sizeFromContents(QStyle::CT_HeaderSection, &opt, QSize(),
+                                                   headerView).width());
             }
+            widths.append(w);
             // compute the total width needed
-            desiredWidth += widths[column];
+            desiredWidth += w;
         }
 
         if(customColumnWidths_.size() <= filenameColumn) { // practically means no custom width
-            // if the total witdh we want exceeds the available space
+            // if the total width we want exceeds the available space
             if(desiredWidth > availWidth) {
                 // Compute the width available for the filename column
-                int filenameAvailWidth = availWidth - desiredWidth + widths[filenameColumn];
+                int filenameAvailWidth = availWidth - desiredWidth + widths.at(filenameColumn);
 
-                // Compute the minimum acceptable width for the filename column
-                int filenameMinWidth = qMin(200, sizeHintForColumn(filenameColumn));
+                // Compute the minimum acceptable width for the filename column, showing
+                // whole texts whose lengths are less than 30 times the average font width.
+                int filenameMinWidth = qMin(iconSize().width()
+                                            + 30 * opt.fontMetrics.averageCharWidth(),
+                                            sizeHintForColumn(filenameColumn));
 
                 if(filenameAvailWidth > filenameMinWidth) {
                     // Shrink the filename column to the available width
@@ -711,9 +744,8 @@ void FolderViewTreeView::layoutColumns() {
 
         // really do the resizing for every column
         for(int column = 0; column < numCols; ++column) {
-            headerView->resizeSection(headerView->logicalIndex(column), widths[column]);
+            headerView->resizeSection(headerView->logicalIndex(column), widths.at(column));
         }
-        delete []widths;
     }
     doingLayout_ = false;
 
@@ -779,7 +811,10 @@ void FolderViewTreeView::queueLayoutColumns() {
 
 void FolderViewTreeView::mouseReleaseEvent(QMouseEvent* event) {
     bool activationWasAllowed = activationAllowed_;
-    if((!style()->styleHint(QStyle::SH_ItemView_ActivateItemOnSingleClick, nullptr, this)) || (event->button() != Qt::LeftButton)) {
+    if(!style()->styleHint(QStyle::SH_ItemView_ActivateItemOnSingleClick, nullptr, this)
+       || event->button() != Qt::LeftButton
+       // also, prevent activation if rubberband selection is greater than dragging distance
+       || rubberBandRect_.width() + rubberBandRect_.height() > QApplication::startDragDistance()) {
         activationAllowed_ = false;
     }
 
@@ -788,7 +823,6 @@ void FolderViewTreeView::mouseReleaseEvent(QMouseEvent* event) {
         viewport()->update(rubberBandRect_.adjusted(-horizontalOffset(), -verticalOffset(),
                                                     -horizontalOffset(), -verticalOffset()));
         rubberBandRect_ = QRect();
-        ctrlDragSelectionFlag_ = QItemSelectionModel::NoUpdate;
     }
     else {
         QTreeView::mouseReleaseEvent(event);
@@ -839,6 +873,7 @@ FolderView::FolderView(FolderView::ViewMode _mode, QWidget *parent):
     selChangedTimer_(nullptr),
     itemDelegateMargins_(QSize(3, 3)),
     shadowHidden_(false),
+    scrollPerPixel_(true),
     ctrlRightClick_(false),
     smoothScrollTimer_(nullptr) {
 
@@ -885,10 +920,38 @@ void FolderView::setCustomColumnWidths(const QList<int> &widths) {
 
 void FolderView::setHiddenColumns(const QList<int> &columns) {
     hiddenColumns_.clear();
-    hiddenColumns_ = columns.toSet();
+    hiddenColumns_ = QSet<int>(columns.begin(), columns.end());
     if(mode == DetailedListMode) {
         if(FolderViewTreeView* treeView = static_cast<FolderViewTreeView*>(view)) {
             treeView->setHiddenColumns(hiddenColumns_);
+        }
+    }
+}
+
+void FolderView::setScrollPerPixel(bool perPixel) {
+    if(scrollPerPixel_ == perPixel) {
+        return;
+    }
+    scrollPerPixel_ = perPixel;
+    if(!scrollPerPixel_ && smoothScrollTimer_ != nullptr) {
+        disconnect(smoothScrollTimer_, &QTimer::timeout, this, &FolderView::scrollSmoothly);
+        smoothScrollTimer_->stop();
+        delete smoothScrollTimer_;
+        smoothScrollTimer_ = nullptr;
+        queuedScrollSteps_.clear(); // also forget the remaining steps
+    }
+
+    // icon and thumbnail modes scroll per pixel by default
+    if(mode == DetailedListMode) {
+        if(FolderViewTreeView* treeView = static_cast<FolderViewTreeView*>(view)) {
+            treeView->setVerticalScrollMode(scrollPerPixel_ ? QAbstractItemView::ScrollPerPixel
+                                                            : QAbstractItemView::ScrollPerItem);
+        }
+    }
+    else if(mode == CompactMode) {
+        if(FolderViewListView* listView = static_cast<FolderViewListView*>(view)) {
+            listView->setHorizontalScrollMode(scrollPerPixel_ ? QAbstractItemView::ScrollPerPixel
+                                                              : QAbstractItemView::ScrollPerItem);
         }
     }
 }
@@ -975,7 +1038,9 @@ void FolderView::onClosingEditor(QWidget* editor, QAbstractItemDelegate::EndEdit
             if (window() == this) { // supposedly desktop, in case it uses this
                 parent = nullptr;
             }
-            changeFileName(info->path(), newName, parent);
+            if(changeFileName(info->path(), newName, parent)) {
+                Q_EMIT inlineRenamed(oldName, newName);
+            }
         }
     }
 }
@@ -983,14 +1048,6 @@ void FolderView::onClosingEditor(QWidget* editor, QAbstractItemDelegate::EndEdit
 void FolderView::setViewMode(ViewMode _mode) {
     if(_mode == mode) { // if it's the same more, ignore
         return;
-    }
-    // smooth scrolling is only for icon and thumbnail modes
-    if(smoothScrollTimer_ && (_mode == DetailedListMode || _mode == CompactMode)) {
-        disconnect(smoothScrollTimer_, &QTimer::timeout, this, &FolderView::scrollSmoothly);
-        smoothScrollTimer_->stop();
-        delete smoothScrollTimer_;
-        smoothScrollTimer_ = nullptr;
-        queuedScrollSteps_.clear(); // also forget the remaining steps
     }
     // FIXME: retain old selection
 
@@ -1008,8 +1065,12 @@ void FolderView::setViewMode(ViewMode _mode) {
     FolderItemDelegate* delegate = nullptr;
     if(mode == DetailedListMode) {
         FolderViewTreeView* treeView = new FolderViewTreeView(this);
+        if(scrollPerPixel_) {
+            treeView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        }
         treeView->setCustomColumnWidths(customColumnWidths_);
         treeView->setHiddenColumns(hiddenColumns_);
+        treeView->setAlternatingRowColors(true);
         connect(treeView, &FolderViewTreeView::activatedFiltered, this, &FolderView::onItemActivated);
         // update the list of custom widhts when the user changes it
         connect(treeView, &FolderViewTreeView::columnResizedByUser, [this](int visualIndex, int newWidth) {
@@ -1062,6 +1123,9 @@ void FolderView::setViewMode(ViewMode _mode) {
             listView = new FolderViewListView(this);
             connect(listView, &FolderViewListView::activatedFiltered, this, &FolderView::onItemActivated);
             view = listView;
+        }
+        if(scrollPerPixel_ && mode == CompactMode) {
+            listView->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
         }
         setFocusProxy(listView);
 
@@ -1224,6 +1288,11 @@ FolderView::ViewMode FolderView::viewMode() const {
 
 void FolderView::setAutoSelectionDelay(int delay) {
     autoSelectionDelay_ = delay;
+    if(autoSelectionDelay_ <= 0 && autoSelectionTimer_) {
+        autoSelectionTimer_->stop();
+        delete autoSelectionTimer_;
+        autoSelectionTimer_ = nullptr;
+    }
 }
 
 QAbstractItemView* FolderView::childView() const {
@@ -1372,12 +1441,9 @@ QModelIndex FolderView::indexFromFolderPath(const Fm::FilePath& folderPath) cons
     return QModelIndex();
 }
 
-void FolderView::selectFiles(const Fm::FileInfoList& files, bool add) {
+bool FolderView::selectFiles(const Fm::FileInfoList& files, bool add) {
     if(!model_ || files.empty()) {
-        return;
-    }
-    if(!add) {
-        selectionModel()->clear();
+        return false;
     }
     QModelIndex index, firstIndex;
     int count = model_->rowCount();
@@ -1396,9 +1462,14 @@ void FolderView::selectFiles(const Fm::FileInfoList& files, bool add) {
         for(auto it = list.cbegin(); it != list.cend(); ++it) {
             auto& item = *it;
             if(item == info) {
-                selectionModel()->select(index, flags);
-                if (!firstIndex.isValid()) {
-                    firstIndex = index;
+                if(model_->showHidden() || !info->isHidden()) {
+                    if (!firstIndex.isValid()) {
+                        firstIndex = index;
+                        if(!add) {
+                            selectionModel()->clear();
+                        }
+                    }
+                    selectionModel()->select(index, flags);
                 }
                 list.erase(it);
                 break;
@@ -1410,7 +1481,9 @@ void FolderView::selectFiles(const Fm::FileInfoList& files, bool add) {
         if (singleFile) { // give focus to the single file
             selectionModel()->setCurrentIndex(firstIndex, QItemSelectionModel::Current);
         }
+        return true;
     }
+    return false;
 }
 
 Fm::FileInfoList FolderView::selectedFiles() const {
@@ -1444,8 +1517,8 @@ void FolderView::invertSelection() {
         const QItemSelection _all{model_->index(0, 0), model_->index(model_->rowCount() - 1, 0)};
         const QItemSelection _old{selModel->selection()};
 
-        selModel->select(_all, QItemSelectionModel::Select);
-        selModel->select(_old, QItemSelectionModel::Deselect);
+        selModel->select(_all, flags | QItemSelectionModel::Select);
+        selModel->select(_old, flags | QItemSelectionModel::Deselect);
     }
 }
 
@@ -1525,11 +1598,86 @@ void FolderView::childDropEvent(QDropEvent* e) {
     }
 
     if(e->keyboardModifiers() == Qt::NoModifier) {
-        // if no key modifiers are used, popup a menu
+        // If no key modifiers are used, pop up a menu
         // to ask the user for the action he/she wants to perform.
-        Qt::DropAction action = DndActionMenu::askUser(e->possibleActions(), QCursor::pos());
-        e->setDropAction(action);
+
+        // NOTE: Under Wayland, serious problems will happen if the DND menu is shown
+        // while the DND is in progress. Also, the menu needs a parent for correct positioning.
+
+        Fm::FilePath destPath;
+        std::shared_ptr<const Fm::FileInfo> info = nullptr;
+        if(model_) {
+            QModelIndex index = view->indexAt(e->pos());
+            info = model_->fileInfoFromIndex(index);
+        }
+        if(info && info->isDir()) {
+            destPath = info->path(); // drop on a subdirectory
+        }
+        else {
+            info = folderInfo();
+            destPath = path(); // drop on blank area of the folder
+        }
+
+        Fm::FilePathList srcPaths;
+        // try to get paths from the original data
+        if(e->mimeData()->hasFormat(QStringLiteral("libfm/files"))) {
+            QByteArray _data = e->mimeData()->data(QStringLiteral("libfm/files"));
+            srcPaths = pathListFromUriList(_data.data());
+        }
+        if(srcPaths.empty() && e->mimeData()->hasUrls()) {
+            srcPaths = Fm::pathListFromQUrls(e->mimeData()->urls());
+        }
+
+        if(!srcPaths.empty()) {
+            Qt::DropActions actions = Qt::IgnoreAction;
+            if(info && info->isWritableDirectory() && info->isWritable()) {
+                actions = e->possibleActions();
+            }
+            auto curPos = view->viewport()->mapToGlobal(e->pos());
+            QTimer::singleShot(0, view, [this, curPos, actions, srcPaths, destPath] {
+                Qt::DropAction action;
+                // Wayland does not see the modifier if it is pressed after dragging.
+                // Therefore, it should be checked now, when the DND is finished.
+                switch(QApplication::keyboardModifiers()) {
+                case Qt::ControlModifier:
+                    action = Qt::CopyAction;
+                    break;
+                case Qt::ShiftModifier:
+                    action = Qt::MoveAction;
+                    break;
+                case Qt::ControlModifier | Qt::ShiftModifier:
+                    action = Qt::LinkAction;
+                    break;
+                default:
+                    // a parent is needed under Wayland for correct positioning
+                    action = DndActionMenu::askUser(actions, curPos, view);
+                    break;
+                }
+
+                Q_EMIT dropIsDecided(action != Qt::IgnoreAction);
+
+                switch(action) {
+                case Qt::CopyAction:
+                    FileOperation::copyFiles(srcPaths, destPath);
+                    break;
+                case Qt::MoveAction:
+                    FileOperation::moveFiles(srcPaths, destPath);
+                    break;
+                case Qt::LinkAction:
+                    FileOperation::symlinkFiles(srcPaths, destPath);
+                    break;
+                default:
+                    break;
+                }
+            });
+            e->accept(); // prevent further event propagation
+            return;
+        }
     }
+
+    QTimer::singleShot(0, view, [this] {
+        Q_EMIT dropIsDecided(true); // after finishing drop
+    });
 }
 
 bool FolderView::eventFilter(QObject* watched, QEvent* event) {
@@ -1550,6 +1698,7 @@ bool FolderView::eventFilter(QObject* watched, QEvent* event) {
     if(view && watched == view->viewport()) {
         switch(event->type()) {
         case QEvent::HoverMove:
+        case QEvent::HoverEnter:
             // activate items on single click
             if(style()->styleHint(QStyle::SH_ItemView_ActivateItemOnSingleClick)) {
                 QHoverEvent* hoverEvent = static_cast<QHoverEvent*>(event);
@@ -1576,108 +1725,115 @@ bool FolderView::eventFilter(QObject* watched, QEvent* event) {
                 setCursor(Qt::ArrowCursor);
             }
             break;
-        case QEvent::Wheel:
+        case QEvent::Wheel: {
+            bool horizontalListView(false);
+
             // don't let the view scroll during an inline renaming
-            if (view) {
-                FolderItemDelegate* delegate = nullptr;
-                if(mode == DetailedListMode) {
-                    FolderViewTreeView* treeView = static_cast<FolderViewTreeView*>(view);
-                    delegate = static_cast<FolderItemDelegate*>(treeView->itemDelegateForColumn(FolderModel::ColumnFileName));
-                }
-                else {
-                    FolderViewListView* listView = static_cast<FolderViewListView*>(view);
-                    delegate = static_cast<FolderItemDelegate*>(listView->itemDelegateForColumn(FolderModel::ColumnFileName));
-                }
-                if (delegate && delegate->hasEditor()) {
-                    return true;
-                }
+            FolderItemDelegate* delegate = nullptr;
+            if(mode == DetailedListMode) {
+                FolderViewTreeView* treeView = static_cast<FolderViewTreeView*>(view);
+                delegate = static_cast<FolderItemDelegate*>(treeView->itemDelegateForColumn(FolderModel::ColumnFileName));
             }
-            // row-by-row scrolling when Shift is pressed
-            if((QApplication::keyboardModifiers() & Qt::ShiftModifier)
-                && (mode == CompactMode || mode == DetailedListMode)) // other modes have smooth scroling
-            {
-                QScrollBar *sbar = (mode == CompactMode ? view->horizontalScrollBar()
-                                                        : view->verticalScrollBar());
-                if(sbar != nullptr) {
-                    QWheelEvent *we = static_cast<QWheelEvent*>(event);
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
-                    QWheelEvent e(we->posF(),
-                                  we->globalPosF(),
-                                  we->pixelDelta(),
-#if (QT_VERSION < QT_VERSION_CHECK(5,14,0))
-                                  QPoint (0, we->angleDelta().y() / QApplication::wheelScrollLines()),
-#else
-                                  // the problem with horizontal wheel scrolling from inside view is fixed in Qt 5.14
-                                  mode == CompactMode
-                                    ? QPoint (we->angleDelta().y() / QApplication::wheelScrollLines(), 0)
-                                    : QPoint (0, we->angleDelta().y() / QApplication::wheelScrollLines()),
-#endif
-                                  we->buttons(),
-                                  Qt::NoModifier,
-                                  we->phase(),
-                                  false,
-                                  we->source());
-#else
-                    QWheelEvent e(we->posF(),
-                                  we->globalPosF(),
-                                  we->angleDelta().y() / QApplication::wheelScrollLines(),
-                                  we->buttons(),
-                                  Qt::NoModifier,
-                                  Qt::Vertical);
-#endif
-                    QApplication::sendEvent(sbar, &e);
-                    return true;
-                }
+            else {
+                FolderViewListView* listView = static_cast<FolderViewListView*>(view);
+                horizontalListView = (listView->flow() == QListView::TopToBottom);
+                delegate = static_cast<FolderItemDelegate*>(listView->itemDelegateForColumn(FolderModel::ColumnFileName));
             }
-            // This is to fix #85: Scrolling doesn't work in compact view
-            // Actually, I think it's the bug of Qt, not ours.
-            // When in compact mode, only the horizontal scroll bar is used and the vertical one is hidden.
-            // So, when a user scroll his mouse wheel, it's reasonable to scroll the horizontal scollbar.
-            // Qt does not implement such a simple feature, unfortunately.
-            // We do it by forwarding the scroll event in the viewport to the horizontal scrollbar.
-            // FIXME: if someday Qt supports this, we have to disable the workaround.
-            else if(mode == CompactMode) {
-#if (QT_VERSION < QT_VERSION_CHECK(5,14,0))
-                QScrollBar* scroll = view->horizontalScrollBar();
-                if(scroll) {
-                    QApplication::sendEvent(scroll, event);
-                    return true;
-                }
-#else
-                return false; // the problem with horizontal wheel scrolling from inside view is fixed in Qt 5.14
-#endif
+            if(delegate && delegate->hasEditor()) {
+                return true;
             }
-            // Smooth Scrolling
-            // Some tricks are adapted from <https://github.com/zhou13/qsmoothscrollarea>.
-            else if(mode != DetailedListMode
-                    && event->spontaneous()
-                    && static_cast<QWheelEvent*>(event)->source() == Qt::MouseEventNotSynthesized
-                    && !(QApplication::keyboardModifiers() & Qt::AltModifier)) {
-                if(QScrollBar* vbar = view->verticalScrollBar()) {
-                    // keep track of the wheel event for smooth scrolling
-                    int delta = static_cast<QWheelEvent*>(event)->angleDelta().y();
-                    if(QApplication::keyboardModifiers() & Qt::ShiftModifier) {
-                        delta /= QApplication::wheelScrollLines(); // row-by-row scrolling
+
+            // Control scrolling with mouse wheel
+            QWheelEvent* we = static_cast<QWheelEvent*>(event);
+            QPoint angleDelta = we->angleDelta();
+            bool horizontal(qAbs(angleDelta.x()) > qAbs(angleDelta.y()));
+            if(event->spontaneous()
+               && we->source() == Qt::MouseEventNotSynthesized
+               // To have a simpler code, we control horizontal scrolling with mouse wheel
+               // only in horizontal list views.
+               && (horizontalListView || !horizontal)) {
+                QScrollBar* sbar = horizontalListView ? view->horizontalScrollBar()
+                                                      : view->verticalScrollBar();
+                if(sbar && sbar->isVisible()) {
+                    // first get the angle delta and customize it according to our needs
+                    int delta = horizontal ? angleDelta.x() : angleDelta.y();
+                    int origDelta = delta;
+                    if(QApplication::wheelScrollLines() > 1) {
+                        /* Scroll with minimum speed when
+                            (1) The mode is compact (because columns can be wide), or
+                            (2) Shift is pressed, or
+                            (3) The angle delta is less than that of an ordinary mouse wheel, or
+                            (4) The view has large icons. */
+                        if(mode == CompactMode
+                           || (we->modifiers() & Qt::ShiftModifier)
+                           || qAbs(delta) < 120
+                           || iconSize(mode).height() >= 96) {
+                            if(qAbs(delta) >= QApplication::wheelScrollLines()) {
+                                delta = delta / QApplication::wheelScrollLines();
+                                // still slower scrolling with very large icons
+                                if(iconSize(mode).height() >= 256 && qAbs(delta) >= 2) {
+                                    delta /= 2;
+                                }
+                            }
+                        }
+                        else if(iconSize(mode).height() >= 64
+                                && QApplication::wheelScrollLines() > 2
+                                && qAbs(delta * 2) >= QApplication::wheelScrollLines()) {
+                            // 2 rows per mouse turn for average icon sizes
+                            delta = delta * 2 / QApplication::wheelScrollLines();
+                        }
                     }
-                    if((delta > 0 && vbar->value() == vbar->minimum()) || (delta < 0 && vbar->value() == vbar->maximum())) {
+
+                    if((delta > 0 && sbar->value() == sbar->minimum()) || (delta < 0 && sbar->value() == sbar->maximum())) {
                         break; // the scrollbar can't move
                     }
 
-                    if(!smoothScrollTimer_) {
-                        smoothScrollTimer_ = new QTimer();
-                        connect(smoothScrollTimer_, &QTimer::timeout, this, &FolderView::scrollSmoothly);
+                    if(!scrollPerPixel_) {
+                        if(origDelta == delta) { // nothing has changed
+                            break;
+                        }
+                        QWheelEvent e(we->position(),
+                                      we->globalPosition(),
+                                      we->pixelDelta(),
+                                      QPoint (0, delta),
+                                      we->buttons(),
+                                      Qt::NoModifier,
+                                      we->phase(),
+                                      false,
+                                      we->source());
+                        QApplication::sendEvent(sbar, &e);
+                        return true;
                     }
+                    else {
+                        // NOTE: Some touchpad devices may trigger wheel events with angle deltas
+                        // less than "scrollAnimFrames", resulting in jumpy movements. Therefore,
+                        // we wait until the total delta value is enough.
+                        static int _delta = 0;
+                        _delta += delta;
+                        if(abs(_delta) < scrollAnimFrames) {
+                            return true;
+                        }
 
-                    // set the data for smooth scrolling
-                    scrollData data;
-                    data.delta = delta;
-                    data.leftFrames = scrollAnimFrames;
-                    queuedScrollSteps_.append(data);
-                    smoothScrollTimer_->start(1000 / SCROLL_FRAMES_PER_SEC);
-                    return true;
+                        if(!smoothScrollTimer_) {
+                            smoothScrollTimer_ = new QTimer();
+                            connect(smoothScrollTimer_, &QTimer::timeout, this, &FolderView::scrollSmoothly);
+                        }
+
+                        // set the data for smooth scrolling
+                        scrollData data;
+                        data.delta = _delta;
+                        data.leftFrames = scrollAnimFrames;
+                        queuedScrollSteps_.append(data);
+                        if(!smoothScrollTimer_->isActive()) {
+                            smoothScrollTimer_->start(1000 / SCROLL_FRAMES_PER_SEC);
+                        }
+                        _delta = 0;
+                        return true;
+                    }
                 }
             }
             break;
+        }
         default:
             break;
         }
@@ -1686,7 +1842,22 @@ bool FolderView::eventFilter(QObject* watched, QEvent* event) {
 }
 
 void FolderView::scrollSmoothly() {
-    if(!view->verticalScrollBar()) {
+    QScrollBar* sbar = nullptr;
+    if(mode == DetailedListMode) {
+        sbar = view->verticalScrollBar();
+    }
+    else {
+        FolderViewListView* listView = static_cast<FolderViewListView*>(view);
+        if(listView->flow() == QListView::TopToBottom) {
+            sbar = view->horizontalScrollBar();
+        }
+        else {
+            sbar = view->verticalScrollBar();
+        }
+    }
+    if(!sbar || !sbar->isVisible()) {
+        queuedScrollSteps_.clear();
+        smoothScrollTimer_->stop();
         return;
     }
 
@@ -1695,6 +1866,9 @@ void FolderView::scrollSmoothly() {
     while(it != queuedScrollSteps_.end()) {
         int delta = qRound((qreal)it->delta / (qreal)scrollAnimFrames);
         int remainingDelta = it->delta - (scrollAnimFrames - it->leftFrames) * delta;
+        if((delta >= 0 && remainingDelta < 0) || (delta < 0 && remainingDelta >= 0)) {
+            remainingDelta = 0;
+        }
         if(qAbs(delta) >= qAbs(remainingDelta)) {
             // this is the last frame or, due to rounding, there can be no more frame
             totalDelta += remainingDelta;
@@ -1707,7 +1881,6 @@ void FolderView::scrollSmoothly() {
         }
     }
     if(totalDelta != 0) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
         QWheelEvent e(QPointF(),
                       QPointF(),
                       QPoint(),
@@ -1716,24 +1889,23 @@ void FolderView::scrollSmoothly() {
                       Qt::NoModifier,
                       Qt::NoScrollPhase,
                       false);
-#else
-        QWheelEvent e(QPointF(),
-                      QPointF(),
-                      totalDelta,
-                      Qt::NoButton,
-                      Qt::NoModifier,
-                      Qt::Vertical);
-#endif
-        QApplication::sendEvent(view->verticalScrollBar(), &e);
-    }
 
-    // update rubberband selection with smooth scrolling
-    if (QApplication::mouseButtons() & Qt::LeftButton) {
-        const QPoint globalPos = QCursor::pos();
-        QPoint pos = view->viewport()->mapFromGlobal(globalPos);
-        QMouseEvent ev(QEvent::MouseMove, pos, view->viewport()->mapTo(view->viewport()->topLevelWidget(), pos), globalPos,
-                       Qt::LeftButton, Qt::LeftButton, QApplication::keyboardModifiers());
-        QApplication::sendEvent(view->viewport(), &ev);
+        QApplication::sendEvent(sbar, &e);
+
+        // update rubberband selection with smooth scrolling in icon view
+        if ((mode == IconMode || mode == ThumbnailMode)
+            && (QApplication::mouseButtons() & Qt::LeftButton)) {
+            const QPoint globalPos = QCursor::pos();
+            QPoint pos = view->viewport()->mapFromGlobal(globalPos);
+            QMouseEvent ev(QEvent::MouseMove,
+                           pos,
+                           view->viewport()->mapTo(view->viewport()->topLevelWidget(), pos),
+                           globalPos,
+                           Qt::LeftButton,
+                           Qt::LeftButton,
+                           QApplication::keyboardModifiers());
+            QApplication::sendEvent(view->viewport(), &ev);
+        }
     }
 
     if(queuedScrollSteps_.empty()) {
@@ -1747,6 +1919,13 @@ void FolderView::onAutoSelectionTimeout() {
         return;
     }
 
+    // If the cursor moves immediately after a (context) menu is shown, "QEvent::HoverMove"
+    // might be sent, which will result in calling this function. That is a Qt issue. As a
+    // workaround, we do not proceed when there is an active popup widget.
+    if(QApplication::activePopupWidget()) {
+        return;
+    }
+
     // don't do anything if the cursor is on selection corner icon
     if(mode != DetailedListMode) {
         FolderViewListView* listView = static_cast<FolderViewListView*>(view);
@@ -1755,9 +1934,13 @@ void FolderView::onAutoSelectionTimeout() {
         }
     }
 
-    Qt::KeyboardModifiers mods = QApplication::keyboardModifiers();
     QPoint pos = view->viewport()->mapFromGlobal(QCursor::pos()); // convert to viewport coordinates
     QModelIndex index = view->indexAt(pos); // find out the hovered item
+    if(!index.isValid()) {
+        return;
+    }
+
+    Qt::KeyboardModifiers mods = QApplication::keyboardModifiers();
     QItemSelectionModel::SelectionFlags flags = (mode == DetailedListMode ? QItemSelectionModel::Rows : QItemSelectionModel::NoUpdate);
     QItemSelectionModel* selModel = view->selectionModel();
 
@@ -1849,8 +2032,8 @@ void FolderView::onFileClicked(int type, const std::shared_ptr<const Fm::FileInf
                 menu = fileMenu;
             }
         }
-        else if (folderInfo()) {
-            Fm::FolderMenu* folderMenu = new Fm::FolderMenu(this);
+        if (!menu && folderInfo()) {
+            Fm::FolderMenu* folderMenu = new Fm::FolderMenu(this, this);
             prepareFolderMenu(folderMenu);
             menu = folderMenu;
         }

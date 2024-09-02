@@ -81,6 +81,10 @@ PathBar::PathBar(QWidget* parent):
     buttonsLayout_->setSpacing(0);
     buttonsLayout_->setSizeConstraint(QLayout::SetFixedSize); // required when added to scroll area according to QScrollArea doc.
     scrollArea_->setWidget(buttonsWidget_); // make the buttons widget scrollable if the path is too long
+
+    // ensure the parent's background is shown behind the bar
+    scrollArea_->viewport()->setAutoFillBackground(false);
+    buttonsWidget_->setAutoFillBackground(false);
 }
 
 void PathBar::resizeEvent(QResizeEvent* event) {
@@ -186,7 +190,7 @@ void PathBar::onButtonToggled(bool checked) {
         currentPath_ = pathForButton(btn);
         Q_EMIT chdir(currentPath_);
 
-        // since scrolling to the toggled buton will happen correctly only when the
+        // since scrolling to the toggled button will happen correctly only when the
         // layout is updated and because the update is disabled on creating buttons
         // in setPath(), the update status can be used as a sign to know when to wait
         if(updatesEnabled()) {
@@ -328,6 +332,15 @@ void PathBar::closeEditor() {
     if(tempPathEdit_ == nullptr) {
         return;
     }
+
+    // WARNING: The d-tor of QWidget deletes its layout and sets it to null while the widget is
+    // still valid and before its children are destroyed. On the other hand, if the pathbar is
+    // deleted while the path-edit has focus, before it is destroyed, the path-edit will lose
+    // focus and call the current function. Therefore, the following nullity check is necessary.
+    if(layout() == nullptr) {
+        return;
+    }
+
     // If a menu has popped up synchronously (with QMenu::exec), the path buttons may be drawn
     // but the path-edit may not disappear until the menu is closed. So, we hide it here.
     // However, since hiding the path-edit makes it lose focus and emit editingFinished(),

@@ -32,6 +32,7 @@
 namespace Fm {
 
 FileLauncher::FileLauncher() {
+    resetExecActions();
 }
 
 FileLauncher::~FileLauncher() {
@@ -39,15 +40,34 @@ FileLauncher::~FileLauncher() {
 
 
 bool FileLauncher::launchFiles(QWidget* parent, const FileInfoList &file_infos) {
+    resetExecActions();
+    multiple_ = file_infos.size() > 1;
     GObjectPtr<FmAppLaunchContext> context{fm_app_launch_context_new_for_widget(parent), false};
     bool ret = BasicFileLauncher::launchFiles(file_infos, G_APP_LAUNCH_CONTEXT(context.get()));
+    launchedFiles(file_infos);
     return ret;
 }
 
 bool FileLauncher::launchPaths(QWidget* parent, const FilePathList& paths) {
+    resetExecActions();
+    multiple_ = paths.size() > 1;
     GObjectPtr<FmAppLaunchContext> context{fm_app_launch_context_new_for_widget(parent), false};
     bool ret = BasicFileLauncher::launchPaths(paths, G_APP_LAUNCH_CONTEXT(context.get()));
+    launchedPaths(paths);
     return ret;
+}
+
+bool FileLauncher::launchWithApp(QWidget* parent, GAppInfo* app, const FilePathList& paths) {
+    GObjectPtr<FmAppLaunchContext> context{fm_app_launch_context_new_for_widget(parent), false};
+    bool ret = BasicFileLauncher::launchWithApp(app, paths, G_APP_LAUNCH_CONTEXT(context.get()));
+    launchedPaths(paths);
+    return ret;
+}
+
+void FileLauncher::launchedFiles(const FileInfoList& /*files*/) const {
+}
+
+void FileLauncher::launchedPaths(const FilePathList& /*paths*/) const {
 }
 
 int FileLauncher::ask(const char* /*msg*/, char* const* /*btn_labels*/, int /*default_btn*/) {
@@ -106,11 +126,46 @@ bool FileLauncher::showError(GAppLaunchContext* /*ctx*/, const GErrorPtr &err, c
     return false;
 }
 
+void FileLauncher::resetExecActions() {
+    multiple_ = false;
+    desktopEntryAction_ = BasicFileLauncher::ExecAction::NONE;
+    scriptAction_ = BasicFileLauncher::ExecAction::NONE;
+    execAction_ = BasicFileLauncher::ExecAction::NONE;
+}
+
 BasicFileLauncher::ExecAction FileLauncher::askExecFile(const FileInfoPtr &file) {
-    auto res = BasicFileLauncher::ExecAction::CANCEL;
+    if(multiple_) {
+        if(file->isDesktopEntry()) {
+            if(desktopEntryAction_ != BasicFileLauncher::ExecAction::NONE) {
+                return desktopEntryAction_;
+            }
+        }
+        else if(file->isText()) {
+            if(scriptAction_ != BasicFileLauncher::ExecAction::NONE) {
+                return scriptAction_;
+            }
+        }
+        else if(execAction_ != BasicFileLauncher::ExecAction::NONE) {
+            return execAction_;
+        }
+    }
+
     ExecFileDialog dlg(*file);
-    if(execModelessDialog(&dlg) == QDialog::Accepted) {
-        res = dlg.result();
+    if(multiple_) {
+        dlg.allowRemembering();
+    }
+    execModelessDialog(&dlg);
+    auto res = dlg.result();
+    if(dlg.isRemembered()) {
+        if(file->isDesktopEntry()) {
+            desktopEntryAction_ = res;
+        }
+        else if(file->isText()) {
+            scriptAction_ = res;
+        }
+        else {
+            execAction_ = res;
+        }
     }
     return res;
 }

@@ -81,6 +81,10 @@ public:
         return filesystemId_;
     }
 
+    const char* fileId() const {
+        return fileId_;
+    }
+
     const std::shared_ptr<const IconInfo>& icon() const {
         return icon_;
     }
@@ -93,6 +97,9 @@ public:
         return ctime_;
     }
 
+    quint64 crtime() const {
+        return crtime_;
+    }
 
     quint64 atime() const {
         return atime_;
@@ -172,6 +179,19 @@ public:
         return dirPath_ ? dirPath_.isNative() : path().isNative();
     }
 
+    bool canMount() const {
+        return canMount_;
+    }
+
+    bool canUnmount() const {
+        return canUnmount_;
+    }
+
+    bool canEject() const {
+        return canEject_;
+    }
+
+
     mode_t mode() const {
         return mode_;
     }
@@ -210,6 +230,8 @@ public:
         return emblems_;
     }
 
+    void setEmblem(const QString& emblmeName, bool setGFileEmblem = true) const;
+
     bool isTrustable() const;
 
     void setTrustable(bool trust) const;
@@ -228,12 +250,14 @@ private:
 
     mode_t mode_;
     const char* filesystemId_;
+    const char* fileId_;
     uid_t uid_;
     gid_t gid_;
     uint64_t size_;
     quint64 mtime_;
     quint64 atime_;
     quint64 ctime_;
+    quint64 crtime_;
     quint64 dtime_;
 
     uint64_t blksize_;
@@ -241,7 +265,7 @@ private:
 
     std::shared_ptr<const MimeType> mimeType_;
     std::shared_ptr<const IconInfo> icon_;
-    std::forward_list<std::shared_ptr<const IconInfo>> emblems_;
+    mutable std::forward_list<std::shared_ptr<const IconInfo>> emblems_;
 
     std::string target_; /* target of shortcut or mountable. */
 
@@ -256,6 +280,9 @@ private:
     bool isIconChangeable_ : 1; /* TRUE if icon can be changed */
     bool isHiddenChangeable_ : 1; /* TRUE if hidden can be changed */
     bool isReadOnly_ : 1; /* TRUE if host FS is R/O */
+    bool canMount_ : 1;  /* TRUE if can be mounted */
+    bool canUnmount_ : 1; /* TRUE if can be unmounted */
+    bool canEject_ : 1; /* TRUE if can be ejected */
 };
 
 

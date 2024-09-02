@@ -7,7 +7,8 @@ namespace Fm {
 FileTransferJob::FileTransferJob(FilePathList srcPaths, Mode mode):
     FileOperationJob{},
     srcPaths_{std::move(srcPaths)},
-    mode_{mode} {
+    mode_{mode},
+    hasDestDirPath_{false} {
 }
 
 FileTransferJob::FileTransferJob(FilePathList srcPaths, FilePathList destPaths, Mode mode):
@@ -17,6 +18,7 @@ FileTransferJob::FileTransferJob(FilePathList srcPaths, FilePathList destPaths, 
 
 FileTransferJob::FileTransferJob(FilePathList srcPaths, const FilePath& destDirPath, Mode mode):
     FileTransferJob{std::move(srcPaths), mode} {
+    hasDestDirPath_ = true;
     setDestDirPath(destDirPath);
 }
 
@@ -25,10 +27,12 @@ void FileTransferJob::setSrcPaths(FilePathList srcPaths) {
 }
 
 void FileTransferJob::setDestPaths(FilePathList destPaths) {
+    hasDestDirPath_ = false;
     destPaths_ = std::move(destPaths);
 }
 
 void FileTransferJob::setDestDirPath(const FilePath& destDirPath) {
+    hasDestDirPath_ = true;
     destPaths_.clear();
     destPaths_.reserve(srcPaths_.size());
     for(const auto& srcPath: srcPaths_) {
@@ -65,7 +69,9 @@ void FileTransferJob::setDestDirPath(const FilePath& destDirPath) {
         else {
             destPath = destDirPath.child(srcPath.baseName().get());
         }
-        destPaths_.emplace_back(std::move(destPath));
+        if(destPath) {
+            destPaths_.emplace_back(std::move(destPath));
+        }
     }
 }
 
@@ -390,17 +396,19 @@ bool FileTransferJob::processPath(const FilePath& srcPath, const FilePath& destD
     bool ret;
     switch(mode_) {
     case Mode::MOVE:
-        ret = moveFile(srcPath, srcInfo, destDirPath, destCopyName ? destCopyName : destFileName);
+        ret = moveFile(srcPath, srcInfo, destDirPath,
+                       hasDestDirPath_ && destCopyName ? destCopyName : destFileName);
         break;
     case Mode::COPY: {
         bool deleteSrc = false;
-        ret = copyFile(srcPath, srcInfo, destDirPath, destCopyName ? destCopyName : destFileName, deleteSrc);
+        ret = copyFile(srcPath, srcInfo, destDirPath,
+                       hasDestDirPath_ && destCopyName ? destCopyName : destFileName, deleteSrc);
         break;
     }
     case Mode::LINK:
         ret = linkFile(srcPath, srcInfo, destDirPath,
                         // see setDestDirPath()
-                        srcPath.isNative() && destCopyName ? destCopyName : destFileName);
+                        srcPath.isNative() && hasDestDirPath_ &&  destCopyName ? destCopyName : destFileName);
         break;
     default:
         ret = false;
@@ -553,8 +561,15 @@ bool FileTransferJob::createSymlink(const FilePath &srcPath, const GFileInfoPtr 
         retry = false;
         if(flags & G_FILE_COPY_OVERWRITE) {  // overwrite existing file
             // creating symlink cannot overwrite existing files directly, so we delete the existing file first.
-            g_file_delete(destPath.gfile().get(), cancellable().get(), nullptr);
+            err.reset();
+            if(!g_file_delete(destPath.gfile().get(), cancellable().get(), &err)) {
+                if(err) {
+                    emitError(err, ErrorSeverity::MODERATE);
+                }
+                break;
+            }
         }
+        err.reset();
         if(!g_file_make_symbolic_link(destPath.gfile().get(), src.get(), cancellable().get(), &err)) {
             retry = handleError(err, srcPath, srcInfo, destPath, flags);
         }

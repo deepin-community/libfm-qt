@@ -12,7 +12,11 @@ const char defaultGFileInfoQueryAttribs[] = "standard::*,"
                                             "access::*,"
                                             "trash::deletion-date,"
                                             "id::filesystem,"
+                                            "id::file,"
                                             "metadata::emblems,"
+                                            "mountable::can-mount,"
+                                            "mountable::can-unmount,"
+                                            "mountable::can-eject,"
                                             METADATA_TRUST;
 
 FileInfo::FileInfo() {
@@ -39,16 +43,30 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
     GIcon* gicon;
     GFileType type;
 
-    if (const char * name = g_file_info_get_name(inf.get()))
+    if(const char* name = g_file_info_get_name(inf.get())) {
         name_ = name;
+    }
 
     dispName_ = QString::fromUtf8(g_file_info_get_display_name(inf.get()));
 
     size_ = g_file_info_get_size(inf.get());
 
+    type = g_file_info_get_file_type(inf.get());
+
     tmp = g_file_info_get_content_type(inf.get());
     if(tmp) {
-        mimeType_ = MimeType::fromName(tmp);
+        if(size_ == 0 && type == G_FILE_TYPE_REGULAR) {
+            /* Treat zero-sized files based on their extensions,
+               and only if not possible, use GLib's type. */
+            mimeType_ = MimeType::guessFromFileName(name_.c_str());
+            if(mimeType_->isUnknownType()) {
+                mimeType_ = MimeType::fromName(tmp);
+            }
+            icon_ = mimeType_->icon();
+        }
+        else {
+            mimeType_ = MimeType::fromName(tmp);
+        }
     }
 
     mode_ = g_file_info_get_attribute_uint32(inf.get(), G_FILE_ATTRIBUTE_UNIX_MODE);
@@ -61,7 +79,6 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
         gid_ = g_file_info_get_attribute_uint32(inf.get(), G_FILE_ATTRIBUTE_UNIX_GID);
     }
 
-    type = g_file_info_get_file_type(inf.get());
     if(0 == mode_) { /* if UNIX file mode is not available, compose a fake one. */
         switch(type) {
         case G_FILE_TYPE_REGULAR:
@@ -131,6 +148,21 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
 
     isShortcut_ = (type == G_FILE_TYPE_SHORTCUT);
     isMountable_ = (type == G_FILE_TYPE_MOUNTABLE);
+
+    canMount_ = canUnmount_ = canEject_ = false;
+    if(isMountable_) {
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_MOUNT)) {
+            canMount_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_MOUNT);
+        }
+
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_UNMOUNT)) {
+            canUnmount_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_UNMOUNT);
+        }
+
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_EJECT)) {
+            canEject_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_EJECT);
+        }
+    }
 
     /* special handling for symlinks */
     if(g_file_info_get_is_symlink(inf.get())) {
@@ -238,7 +270,7 @@ _file_is_symlink:
     }
 
 #if 0
-    /* set "locked" icon on unaccesible folder */
+    /* set "locked" icon on unaccessible folder */
     else if(!accessible && type == G_FILE_TYPE_DIRECTORY) {
         icon = g_object_ref(icon_locked_folder);
     }
@@ -259,9 +291,13 @@ _file_is_symlink:
     tmp = g_file_info_get_attribute_string(inf.get(), G_FILE_ATTRIBUTE_ID_FILESYSTEM);
     filesystemId_ = g_intern_string(tmp);
 
+    tmp = g_file_info_get_attribute_string(inf.get(), G_FILE_ATTRIBUTE_ID_FILE);
+    fileId_ = g_intern_string(tmp);
+
     mtime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_MODIFIED);
     atime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_ACCESS);
     ctime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_CHANGED);
+    crtime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_CREATED);
     if(auto dt = g_file_info_get_deletion_date(inf.get())){
         dtime_ = g_date_time_to_unix(dt);
     }
@@ -410,7 +446,7 @@ void FileInfo::setTrustable(bool trust) const {
     if(!isExecutableType()) {
         return; // METADATA_TRUST is only for executables
     }
-    GObjectPtr<GFileInfo> info {g_file_info_new()}; // used to set only this attribute
+    GFileInfoPtr info{g_file_info_new(), false}; // used to set only this attribute
     if(trust) {
         g_file_info_set_attribute_string(info.get(), METADATA_TRUST, "true");
         g_file_info_set_attribute_string(inf_.get(), METADATA_TRUST, "true");
@@ -425,6 +461,43 @@ void FileInfo::setTrustable(bool trust) const {
                                     nullptr, nullptr);
 }
 
+void FileInfo::setEmblem(const QString& emblmeName, bool setGFileEmblem) const {
+    QByteArray str;
+    if(!emblmeName.isEmpty()) {
+        str = emblmeName.toLocal8Bit();
+        char* stringv[] = {str.data(), nullptr};
+        g_file_info_set_attribute_stringv(inf_.get(), "metadata::emblems", stringv);
+    }
+    else {
+        g_file_info_set_attribute(inf_.get(), "metadata::emblems", G_FILE_ATTRIBUTE_TYPE_INVALID, nullptr);
+    }
+    // update current emblems
+    emblems_.clear();
+    if(g_file_info_get_attribute_type(inf_.get(), "metadata::emblems") == G_FILE_ATTRIBUTE_TYPE_STRINGV) {
+        auto emblem_names = g_file_info_get_attribute_stringv(inf_.get(), "metadata::emblems");
+        if(emblem_names) {
+            auto n_emblems = g_strv_length(emblem_names);
+            for(int i = n_emblems - 1; i >= 0; --i) {
+                emblems_.emplace_front(Fm::IconInfo::fromName(emblem_names[i]));
+            }
+        }
+    }
+
+    if(setGFileEmblem) { // really give the emblem to GFile
+        GFileInfoPtr info{g_file_info_new(), false};
+        if(!str.isEmpty()) {
+            char* stringv[] = {str.data(), nullptr};
+            g_file_info_set_attribute_stringv(info.get(), "metadata::emblems", stringv);
+        }
+        else {
+            g_file_info_set_attribute(info.get(), "metadata::emblems", G_FILE_ATTRIBUTE_TYPE_INVALID, nullptr);
+        }
+        g_file_set_attributes_from_info(path().gfile().get(),
+                                        info.get(),
+                                        G_FILE_QUERY_INFO_NONE,
+                                        nullptr, nullptr);
+    }
+}
 
 bool FileInfoList::isSameType() const {
     if(!empty()) {

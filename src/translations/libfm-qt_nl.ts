@@ -6,12 +6,12 @@
     <message>
         <location filename="../app-chooser-dialog.ui" line="14"/>
         <source>Choose an Application</source>
-        <translation>Kies een toepassing</translation>
+        <translation>Kies een programma</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="36"/>
         <source>Installed Applications</source>
-        <translation>Geïnstalleerde toepassingen</translation>
+        <translation>Geïnstalleerde programma&apos;s</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="46"/>
@@ -26,7 +26,7 @@
     <message>
         <location filename="../app-chooser-dialog.ui" line="62"/>
         <source>Application name:</source>
-        <translation>Naam van toepassing:</translation>
+        <translation>Programmanaam:</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="72"/>
@@ -37,28 +37,28 @@
 &lt;li&gt;&lt;b&gt;%u&lt;/b&gt;: Represents a single URI of the file&lt;/li&gt;
 &lt;li&gt;&lt;b&gt;%U&lt;/b&gt;: Represents multiple URIs&lt;/li&gt;
 &lt;/ul&gt;</source>
-        <translation>&lt;b&gt;Deze speciale codes kunt u gebruiken in de opdrachtregel:&lt;/b&gt;
+        <translation>&lt;b&gt;Deze speciale codes kunt u op de opdrachtregel gebruiken:&lt;/b&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;b&gt;%f&lt;/b&gt;: Vertegenwoordigt een enkele bestandnaam&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;%F&lt;/b&gt;: Vertegenwoordigt meerdere bestandnamen&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;%u&lt;/b&gt;: Vertegenwoordigt een enkele URI van het bestand&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;%U&lt;/b&gt;: Vertegenwoordigt meerdere URI&apos;s&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%f&lt;/b&gt;: vertegenwoordigt een enkele bestandsnaam&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%F&lt;/b&gt;: vertegenwoordigt meerdere bestandsnamen&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%u&lt;/b&gt;: vertegenwoordigt een enkele uri van het bestand&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%U&lt;/b&gt;: vertegenwoordigt meerdere uri&apos;s&lt;/li&gt;
 &lt;/ul&gt;</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="91"/>
         <source>Keep terminal window open after command execution</source>
-        <translation>Houd terminalvenster open na het uitvoeren van opdrachtregel</translation>
+        <translation>Terminalvenster niet sluiten na uitvoeren van opdrachtregel</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="98"/>
         <source>Execute in terminal emulator</source>
-        <translation>Voer uit in een terminalnabootser</translation>
+        <translation>Uitvoeren in terminalvenster</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="109"/>
         <source>Set selected application as default action of this file type</source>
-        <translation>Stel gekozen toepassing in als standaardactie voor deze bestandsoort</translation>
+        <translation>Gekozen programma instellen als standaard bij dit bestandstype</translation>
     </message>
 </context>
 <context>
@@ -66,7 +66,7 @@
     <message>
         <location filename="../edit-bookmarks.ui" line="14"/>
         <source>Edit Bookmarks</source>
-        <translation>Bladwijzers bewerken</translation>
+        <translation>Bladwijzers aanpassen</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="42"/>
@@ -76,22 +76,22 @@
     <message>
         <location filename="../edit-bookmarks.ui" line="47"/>
         <source>Location</source>
-        <translation>Plaats</translation>
+        <translation>Locatie</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="67"/>
         <source>&amp;Add Item</source>
-        <translation>Element &amp;toevoegen</translation>
+        <translation>Item &amp;toevoegen</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="77"/>
         <source>&amp;Remove Item</source>
-        <translation>Element &amp;verwijderen</translation>
+        <translation>Item ve&amp;rwijderen</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="102"/>
         <source>Use drag and drop to reorder the items</source>
-        <translation>Gebruik sleur en pleur om de elementen opnieuw te rangschikken</translation>
+        <translation>Slepen-en-neerzetten gebruiken items te herordenen</translation>
     </message>
 </context>
 <context>
@@ -102,24 +102,29 @@
         <translation>Bestand uitvoeren</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="39"/>
+        <location filename="../exec-file.ui" line="42"/>
         <source>&amp;Open</source>
-        <translation>O&amp;penen</translation>
+        <translation>&amp;Openen</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="52"/>
+        <location filename="../exec-file.ui" line="55"/>
         <source>E&amp;xecute</source>
         <translation>&amp;Uitvoeren</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="62"/>
+        <location filename="../exec-file.ui" line="65"/>
         <source>Execute in &amp;Terminal</source>
-        <translation>In een &amp;terminal uitvoeren</translation>
+        <translation>Uitvoeren in &amp;terminalvenster</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="85"/>
+        <location filename="../exec-file.ui" line="88"/>
         <source>Cancel</source>
         <translation>Afbreken</translation>
+    </message>
+    <message>
+        <location filename="../exec-file.ui" line="102"/>
+        <source>Remember for next files of this kind</source>
+        <translation>Onthouden voor andere bestanden van dit type</translation>
     </message>
 </context>
 <context>
@@ -127,7 +132,7 @@
     <message>
         <location filename="../filedialog.ui" line="22"/>
         <source>Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Locatie:</translation>
     </message>
     <message>
         <location filename="../filedialog.ui" line="65"/>
@@ -137,7 +142,7 @@
     <message>
         <location filename="../filedialog.ui" line="75"/>
         <source>File type:</source>
-        <translation>Bestandssoort:</translation>
+        <translation>Bestandstype:</translation>
     </message>
 </context>
 <context>
@@ -155,7 +160,7 @@
     <message>
         <location filename="../file-operation-dialog.ui" line="68"/>
         <source>Preparing...</source>
-        <translation>Voorbereiden...</translation>
+        <translation>Bezig met voorbereiden…</translation>
     </message>
     <message>
         <location filename="../file-operation-dialog.ui" line="75"/>
@@ -170,7 +175,7 @@
     <message>
         <location filename="../file-operation-dialog.ui" line="125"/>
         <source>Files processed:</source>
-        <translation>Verwerkte bestanden:</translation>
+        <translation>Aantal verwerkte bestanden:</translation>
     </message>
 </context>
 <context>
@@ -178,7 +183,7 @@
     <message>
         <location filename="../file-props.ui" line="14"/>
         <source>File Properties</source>
-        <translation>Bestandeigenschappen</translation>
+        <translation>Bestandseigenschappen</translation>
     </message>
     <message>
         <location filename="../file-props.ui" line="41"/>
@@ -193,7 +198,7 @@
     <message>
         <location filename="../file-props.ui" line="106"/>
         <source>File type:</source>
-        <translation>Bestandsoort:</translation>
+        <translation>Bestandstype:</translation>
     </message>
     <message>
         <location filename="../file-props.ui" line="129"/>
@@ -203,7 +208,7 @@
     <message>
         <location filename="../file-props.ui" line="152"/>
         <source>File size:</source>
-        <translation>Bestandgrootte:</translation>
+        <translation>Bestandsgrootte:</translation>
     </message>
     <message>
         <location filename="../file-props.ui" line="175"/>
@@ -218,7 +223,7 @@
     <message>
         <location filename="../file-props.ui" line="221"/>
         <source>Link target:</source>
-        <translation>Koppelingsdoel:</translation>
+        <translation>Linkdoel:</translation>
     </message>
     <message>
         <location filename="../file-props.ui" line="247"/>
@@ -228,98 +233,118 @@
     <message>
         <location filename="../file-props.ui" line="264"/>
         <source>Last accessed:</source>
-        <translation>Laatst benaderd:</translation>
+        <translation>Laatst geopend:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="281"/>
+        <location filename="../file-props.ui" line="287"/>
+        <source>Created:</source>
+        <translation>Aangemaakt op:</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="310"/>
         <source>Contains:</source>
         <translation>Bevat:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="336"/>
+        <location filename="../file-props.ui" line="330"/>
+        <source>Emblem:</source>
+        <translation>Embleem:</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="342"/>
+        <source>Choose emblem</source>
+        <translation>Kies een embleem</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="361"/>
+        <source>Clear emblem</source>
+        <translation>Embleem verwijderen</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="414"/>
         <source>Device Usage:</source>
         <translation>Apparaatgebruik:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="346"/>
+        <location filename="../file-props.ui" line="424"/>
         <source>Permissions</source>
         <translation>Rechten</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="361"/>
+        <location filename="../file-props.ui" line="439"/>
         <source>Ownership</source>
         <translation>Eigendom</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="385"/>
-        <location filename="../file-props.ui" line="450"/>
-        <location filename="../file-props.ui" line="564"/>
+        <location filename="../file-props.ui" line="463"/>
+        <location filename="../file-props.ui" line="528"/>
+        <location filename="../file-props.ui" line="642"/>
         <source>Group:</source>
         <translation>Groep:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="398"/>
-        <location filename="../file-props.ui" line="433"/>
-        <location filename="../file-props.ui" line="512"/>
+        <location filename="../file-props.ui" line="476"/>
+        <location filename="../file-props.ui" line="511"/>
+        <location filename="../file-props.ui" line="590"/>
         <source>Owner:</source>
         <translation>Eigenaar:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="414"/>
+        <location filename="../file-props.ui" line="492"/>
         <source>Access Control</source>
         <translation>Toegangsbeheer</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="467"/>
-        <location filename="../file-props.ui" line="616"/>
+        <location filename="../file-props.ui" line="545"/>
+        <location filename="../file-props.ui" line="694"/>
         <source>Other:</source>
-        <translation>Overige:</translation>
+        <translation>Overig:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="484"/>
+        <location filename="../file-props.ui" line="562"/>
         <source>Make the file executable</source>
         <translation>Bestand uitvoerbaar maken</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="525"/>
-        <location filename="../file-props.ui" line="577"/>
-        <location filename="../file-props.ui" line="629"/>
+        <location filename="../file-props.ui" line="603"/>
+        <location filename="../file-props.ui" line="655"/>
+        <location filename="../file-props.ui" line="707"/>
         <source>Read</source>
         <translation>Lezen</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="538"/>
-        <location filename="../file-props.ui" line="590"/>
-        <location filename="../file-props.ui" line="642"/>
+        <location filename="../file-props.ui" line="616"/>
+        <location filename="../file-props.ui" line="668"/>
+        <location filename="../file-props.ui" line="720"/>
         <source>Write</source>
         <translation>Schrijven</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="551"/>
-        <location filename="../file-props.ui" line="603"/>
-        <location filename="../file-props.ui" line="655"/>
+        <location filename="../file-props.ui" line="629"/>
+        <location filename="../file-props.ui" line="681"/>
+        <location filename="../file-props.ui" line="733"/>
         <source>Execute</source>
         <translation>Uitvoeren</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="664"/>
+        <location filename="../file-props.ui" line="742"/>
         <source>Sticky</source>
-        <translation>Klevend</translation>
+        <translation>Vastgemaakt</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="671"/>
+        <location filename="../file-props.ui" line="749"/>
         <source>SetUID</source>
         <translation>SetUID</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="678"/>
+        <location filename="../file-props.ui" line="756"/>
         <source>SetGID</source>
         <translation>SetGID</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="714"/>
+        <location filename="../file-props.ui" line="792"/>
         <source>Advanced Mode</source>
-        <translation>Geavanceerde modus</translation>
+        <translation>Expertmodus</translation>
     </message>
 </context>
 <context>
@@ -333,9 +358,9 @@
 <context>
     <name>Fm::AppChooserDialog</name>
     <message>
-        <location filename="../appchooserdialog.cpp" line="263"/>
+        <location filename="../appchooserdialog.cpp" line="268"/>
         <source>Select an application to open &quot;%1&quot; files</source>
-        <translation>Kies een toepassing voor het openen van &apos;%1&apos; bestanden</translation>
+        <translation>Kies een programma om %1-bestanden mee te openen</translation>
     </message>
 </context>
 <context>
@@ -356,7 +381,7 @@
     <message>
         <location filename="../core/dirlistjob.cpp" line="48"/>
         <source>The specified directory &apos;%1&apos; is not valid</source>
-        <translation>De opgegeven map &apos;%1&apos; is niet geldig</translation>
+        <translation>De opgegeven map, ‘%1’, is ongeldig</translation>
     </message>
 </context>
 <context>
@@ -364,32 +389,32 @@
     <message>
         <location filename="../dirtreemodelitem.cpp" line="84"/>
         <source>Loading...</source>
-        <translation>Laden...</translation>
+        <translation>Bezig met laden…</translation>
     </message>
     <message>
         <location filename="../dirtreemodelitem.cpp" line="267"/>
         <location filename="../dirtreemodelitem.cpp" line="311"/>
         <location filename="../dirtreemodelitem.cpp" line="409"/>
         <source>&lt;No sub folders&gt;</source>
-        <translation>&lt;Geen submappen&gt;</translation>
+        <translation>&lt;geen onderliggende mappen&gt;</translation>
     </message>
 </context>
 <context>
     <name>Fm::DirTreeView</name>
     <message>
-        <location filename="../dirtreeview.cpp" line="213"/>
-        <source>Open in New T&amp;ab</source>
-        <translation>Open in nieuw t&amp;abblad</translation>
-    </message>
-    <message>
         <location filename="../dirtreeview.cpp" line="217"/>
-        <source>Open in New Win&amp;dow</source>
-        <translation>Open in nieuw &amp;venster</translation>
+        <source>Open in New T&amp;ab</source>
+        <translation>Openen op nieuw t&amp;abblad</translation>
     </message>
     <message>
-        <location filename="../dirtreeview.cpp" line="222"/>
+        <location filename="../dirtreeview.cpp" line="221"/>
+        <source>Open in New Win&amp;dow</source>
+        <translation>Openen in nieuw &amp;venster</translation>
+    </message>
+    <message>
+        <location filename="../dirtreeview.cpp" line="226"/>
         <source>Open in Termina&amp;l</source>
-        <translation>Open in termina&amp;lvenster</translation>
+        <translation>Openen in termina&amp;lvenster</translation>
     </message>
 </context>
 <context>
@@ -407,12 +432,17 @@
     <message>
         <location filename="../dndactionmenu.cpp" line="38"/>
         <source>Create symlink here</source>
-        <translation>Maak hier een symbolische koppeling</translation>
+        <translation>Snelkoppeling hier maken</translation>
     </message>
     <message>
-        <location filename="../dndactionmenu.cpp" line="41"/>
+        <location filename="../dndactionmenu.cpp" line="42"/>
         <source>Cancel</source>
         <translation>Afbreken</translation>
+    </message>
+    <message>
+        <location filename="../dndactionmenu.cpp" line="42"/>
+        <source>Cannot drop here</source>
+        <translation>Hier kan niks worden geplaatst</translation>
     </message>
 </context>
 <context>
@@ -429,164 +459,174 @@
         <location filename="../execfiledialog.cpp" line="40"/>
         <source>This file &apos;%1&apos; seems to be a desktop entry.
 What do you want to do with it?</source>
-        <translation>Dit bestand &apos;%1&apos; lijkt een bureaubladsnelkoppeling te zijn.
+        <translation>‘%1’ lijkt een bureaubladsnelkoppeling te zijn.
 Wat wilt u ermee doen?</translation>
     </message>
     <message>
         <location filename="../execfiledialog.cpp" line="46"/>
         <source>This text file &apos;%1&apos; seems to be an executable script.
 What do you want to do with it?</source>
-        <translation>Het tekstbestand &apos;%1&apos; lijkt een uitvoerbaar script te zijn.
+        <translation>‘%1’ lijkt een uitvoerbaar script te zijn.
 Wat wilt u ermee doen?</translation>
     </message>
     <message>
         <location filename="../execfiledialog.cpp" line="51"/>
         <source>This file &apos;%1&apos; is executable. Do you want to execute it?</source>
-        <translation>Het bestand &apos;%1&apos; is uitvoerbaar. Wilt u het uitvoeren?</translation>
+        <translation>‘%1’ is uitvoerbaar. Wilt u het uitvoeren?</translation>
     </message>
 </context>
 <context>
     <name>Fm::FileDialog</name>
     <message>
-        <location filename="../filedialog.cpp" line="109"/>
+        <location filename="../filedialog.cpp" line="111"/>
         <source>Go Back</source>
         <translation>Ga terug</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="110"/>
+        <location filename="../filedialog.cpp" line="112"/>
         <source>Alt+Left</source>
         <comment>Go Back</comment>
         <translation>Alt+Links</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="116"/>
+        <location filename="../filedialog.cpp" line="118"/>
         <source>Go Forward</source>
         <translation>Ga vooruit</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="117"/>
+        <location filename="../filedialog.cpp" line="119"/>
         <source>Alt+Right</source>
         <comment>Go Forward</comment>
         <translation>Alt+Rechts</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="124"/>
+        <location filename="../filedialog.cpp" line="126"/>
         <source>Reload</source>
         <translation>Herladen</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="125"/>
+        <location filename="../filedialog.cpp" line="127"/>
         <source>F5</source>
         <comment>Reload</comment>
         <translation>F5</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="142"/>
+        <location filename="../filedialog.cpp" line="144"/>
         <source>Create Folder</source>
         <translation>Map maken</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="152"/>
+        <location filename="../filedialog.cpp" line="160"/>
         <source>Icon View</source>
         <translation>Pictogramweergave</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="156"/>
+        <location filename="../filedialog.cpp" line="164"/>
         <source>Thumbnail View</source>
         <translation>Miniatuurweergave</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="160"/>
+        <location filename="../filedialog.cpp" line="168"/>
         <source>Compact View</source>
         <translation>Compacte weergave</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="164"/>
-        <source>Detailed List View</source>
-        <translation>Gedetailleerde lijstweergave</translation>
-    </message>
-    <message>
         <location filename="../filedialog.cpp" line="172"/>
+        <source>Detailed List View</source>
+        <translation>Uitgebreide lijstweergave</translation>
+    </message>
+    <message>
+        <location filename="../filedialog.cpp" line="180"/>
         <source>Icon Sizes</source>
-        <translation type="unfinished"></translation>
+        <translation>Pictogramomvang</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="174"/>
+        <location filename="../filedialog.cpp" line="182"/>
         <source>Size of big icons:</source>
-        <translation type="unfinished"></translation>
+        <translation>Omvang van grote pictogrammen:</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="181"/>
+        <location filename="../filedialog.cpp" line="189"/>
         <source>Size of small icons:</source>
-        <translation type="unfinished"></translation>
+        <translation>Omvang van kleine pictogrammen:</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="188"/>
+        <location filename="../filedialog.cpp" line="196"/>
         <source>Size of thumbnails:</source>
-        <translation type="unfinished"></translation>
+        <translation>Minatuuromvang:</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="204"/>
+        <location filename="../filedialog.cpp" line="212"/>
+        <source>Show Hidden</source>
+        <translation>Verborgen bestanden/mappen tonen</translation>
+    </message>
+    <message>
+        <location filename="../filedialog.cpp" line="224"/>
         <source>Show Thumbnails</source>
-        <translation type="unfinished"></translation>
+        <translation>Miniaturen tonen</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="209"/>
+        <location filename="../filedialog.cpp" line="229"/>
         <source>Show File Tooltips</source>
-        <translation type="unfinished"></translation>
+        <translation>Hulpballonnen bij bestanden tonen</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="220"/>
+        <location filename="../filedialog.cpp" line="236"/>
+        <source>Smooth Scrolling</source>
+        <translation>Vloeiend schuiven</translation>
+    </message>
+    <message>
+        <location filename="../filedialog.cpp" line="251"/>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opties</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="540"/>
-        <location filename="../filedialog.cpp" line="935"/>
+        <location filename="../filedialog.cpp" line="601"/>
+        <location filename="../filedialog.cpp" line="1060"/>
         <source>Error</source>
-        <translation>Fout</translation>
+        <translation>Foutmelding</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="540"/>
+        <location filename="../filedialog.cpp" line="601"/>
         <source>Please select a file</source>
-        <translation>Kies a.u.b. een bestand</translation>
+        <translation>Kies een bestand</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="582"/>
+        <location filename="../filedialog.cpp" line="677"/>
         <source>%1 already exists.
 Do you want to replace it?</source>
-        <translation>%1 bestaat reeds.
+        <translation>%1 bestaat al.
 Wilt u het vervangen?</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="905"/>
+        <location filename="../filedialog.cpp" line="1022"/>
         <source>Path &quot;%1&quot; does not exist</source>
-        <translation>Pad &apos;%1&apos; bestaat niet</translation>
+        <translation>De locatie, ‘%1’, bestaat niet</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="919"/>
+        <location filename="../filedialog.cpp" line="1036"/>
         <source>&quot;%1&quot; is not a directory</source>
-        <translation>&apos;%1&apos; is geen map</translation>
+        <translation>‘%1’ is geen map</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="925"/>
+        <location filename="../filedialog.cpp" line="1046"/>
         <source>&quot;%1&quot; is not a file</source>
-        <translation>&apos;%1&apos; is geen bestand</translation>
+        <translation>‘%1’ is geen bestand</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="1077"/>
-        <location filename="../filedialog.cpp" line="1185"/>
+        <location filename="../filedialog.cpp" line="1200"/>
+        <location filename="../filedialog.cpp" line="1317"/>
         <source>&amp;Open</source>
         <translation>O&amp;penen</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="1080"/>
-        <location filename="../filedialog.cpp" line="1193"/>
+        <location filename="../filedialog.cpp" line="1203"/>
+        <location filename="../filedialog.cpp" line="1325"/>
         <source>&amp;Save</source>
-        <translation>&amp;Opslaan</translation>
+        <translation>Op&amp;slaan</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="1087"/>
+        <location filename="../filedialog.cpp" line="1210"/>
         <source>All Files (*)</source>
         <translation>Alle bestanden (*)</translation>
     </message>
@@ -594,12 +634,12 @@ Wilt u het vervangen?</translation>
 <context>
     <name>Fm::FileDialogHelper</name>
     <message>
-        <location filename="../filedialoghelper.cpp" line="139"/>
+        <location filename="../filedialoghelper.cpp" line="138"/>
         <source>Open File</source>
         <translation>Bestand openen</translation>
     </message>
     <message>
-        <location filename="../filedialoghelper.cpp" line="140"/>
+        <location filename="../filedialoghelper.cpp" line="139"/>
         <source>Save File</source>
         <translation>Bestand opslaan</translation>
     </message>
@@ -609,99 +649,128 @@ Wilt u het vervangen?</translation>
     <message>
         <location filename="../filedialog_p.h" line="40"/>
         <source> px</source>
-        <translation type="unfinished"></translation>
+        <translation> px</translation>
     </message>
 </context>
 <context>
     <name>Fm::FileMenu</name>
     <message>
-        <location filename="../filemenu.cpp" line="84"/>
+        <location filename="../filemenu.cpp" line="86"/>
         <source>Open</source>
         <translation>Openen</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="122"/>
-        <source>Create &amp;New</source>
-        <translation>&amp;Nieuw maken</translation>
+        <location filename="../filemenu.cpp" line="356"/>
+        <source>Many files</source>
+        <translation>Veel bestanden</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../filemenu.cpp" line="357"/>
+        <source>Do you want to open these %1 files?</source>
+        <translation>
+            <numerusform>Wilt u %1 bestand openen?</numerusform>
+            <numerusform>Wilt u %1 bestanden openen?</numerusform>
+        </translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="141"/>
+        <location filename="../filemenu.cpp" line="125"/>
+        <source>Create &amp;New</source>
+        <translation>&amp;Nieuw</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="144"/>
         <source>&amp;Restore</source>
         <translation>Te&amp;rugzetten</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="147"/>
+        <location filename="../filemenu.cpp" line="154"/>
         <source>Cut</source>
         <translation>Knippen</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="151"/>
+        <location filename="../filemenu.cpp" line="158"/>
         <source>Copy</source>
         <translation>Kopiëren</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="155"/>
+        <location filename="../filemenu.cpp" line="162"/>
         <source>Paste</source>
         <translation>Plakken</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="159"/>
-        <location filename="../filemenu.cpp" line="407"/>
+        <location filename="../filemenu.cpp" line="166"/>
+        <location filename="../filemenu.cpp" line="484"/>
         <source>&amp;Move to Trash</source>
-        <translation>Naar de &amp;prullenbak verplaatsen</translation>
+        <translation>Verplaatsen naar &amp;prullenbak</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="253"/>
-        <source>Trust selected executables</source>
-        <translation>Gekozen uitvoerbare bestanden vertrouwen</translation>
+        <location filename="../filemenu.cpp" line="226"/>
+        <source>Mount</source>
+        <translation>Aankoppelen</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="240"/>
+        <source>Unmount</source>
+        <translation>Ontkoppelen</translation>
     </message>
     <message>
         <location filename="../filemenu.cpp" line="254"/>
-        <source>Trust this executable</source>
-        <translation>Vertrouw dit uitvoerbare bestand</translation>
+        <source>Eject</source>
+        <translation>Uitwerpen</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="342"/>
+        <location filename="../filemenu.cpp" line="313"/>
+        <source>Trust selected executables</source>
+        <translation>Geselecteerde uitvoerbare bestanden vertrouwen</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="314"/>
+        <source>Trust this executable</source>
+        <translation>Uitvoerbaar bestand vertrouwen</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="419"/>
         <source>Output</source>
         <translation>Uitvoer</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="407"/>
+        <location filename="../filemenu.cpp" line="148"/>
+        <location filename="../filemenu.cpp" line="484"/>
         <source>&amp;Delete</source>
         <translation>&amp;Wissen</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="163"/>
+        <location filename="../filemenu.cpp" line="170"/>
         <source>Rename</source>
-        <translation>Hernoemen</translation>
+        <translation>Naam wijzigen</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="88"/>
+        <location filename="../filemenu.cpp" line="90"/>
         <source>Open With...</source>
-        <translation>Openen met...</translation>
+        <translation>Openen met…</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="116"/>
+        <location filename="../filemenu.cpp" line="118"/>
         <source>Other Applications</source>
-        <translation>Andere toepassingen</translation>
+        <translation>Andere programma&apos;s</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="218"/>
+        <location filename="../filemenu.cpp" line="275"/>
         <source>Extract to...</source>
-        <translation>Uitpakken naar...</translation>
+        <translation>Uitpakken naar…</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="226"/>
+        <location filename="../filemenu.cpp" line="283"/>
         <source>Extract Here</source>
         <translation>Hier uitpakken</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="233"/>
+        <location filename="../filemenu.cpp" line="290"/>
         <source>Compress</source>
-        <translation>Comprimeren</translation>
+        <translation>Inpakken</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="242"/>
+        <location filename="../filemenu.cpp" line="299"/>
         <source>Properties</source>
         <translation>Eigenschappen</translation>
     </message>
@@ -709,32 +778,38 @@ Wilt u het vervangen?</translation>
 <context>
     <name>Fm::FileOperation</name>
     <message>
-        <location filename="../fileoperation.cpp" line="312"/>
+        <location filename="../fileoperation.cpp" line="317"/>
         <source>Error</source>
-        <translation>Fout</translation>
+        <translation>Foutmelding</translation>
     </message>
     <message>
-        <location filename="../fileoperation.cpp" line="313"/>
+        <location filename="../fileoperation.cpp" line="318"/>
         <source>Some files cannot be moved to trash can because the underlying file systems don&apos;t support this operation.
 Do you want to delete them instead?</source>
         <translation>Sommige bestanden kunnen niet naar de prullenbak worden verplaatst, omdat de onderliggende bestandssystemen deze bewerking niet ondersteunen.
-Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
+Wilt u ze in plaats daarvan permanent verwijderen?</translation>
     </message>
     <message>
-        <location filename="../fileoperation.cpp" line="399"/>
-        <location filename="../fileoperation.cpp" line="417"/>
+        <location filename="../fileoperation.cpp" line="404"/>
+        <location filename="../fileoperation.cpp" line="422"/>
         <source>Confirm</source>
         <translation>Bevestigen</translation>
     </message>
-    <message>
-        <location filename="../fileoperation.cpp" line="400"/>
-        <source>Do you want to delete the selected files?</source>
-        <translation>Wilt u de gekozen bestanden verwijderen?</translation>
+    <message numerus="yes">
+        <location filename="../fileoperation.cpp" line="405"/>
+        <source>Do you want to delete the selected file(s)?</source>
+        <translation>
+            <numerusform>Weet u zeker dat u het geselecteerde bestand wilt verwijderen?</numerusform>
+            <numerusform>Weet u zeker dat u de geselecteerde bestanden wilt verwijderen?</numerusform>
+        </translation>
     </message>
-    <message>
-        <location filename="../fileoperation.cpp" line="418"/>
-        <source>Do you want to move the selected files to trash can?</source>
-        <translation>Wilt u de gekozen bestanden verplaatsen naar de prullenbak?</translation>
+    <message numerus="yes">
+        <location filename="../fileoperation.cpp" line="423"/>
+        <source>Do you want to move the selected file(s) to trash can?</source>
+        <translation>
+            <numerusform>Weet u zeker dat u het geselecteerde bestand wilt verplaatsen naar de prullenbak?</numerusform>
+            <numerusform>Weet u zeker dat u de geselecteerde bestanden wilt verplaatsen naar de prullenbak?</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -747,7 +822,7 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
     <message>
         <location filename="../fileoperationdialog.cpp" line="47"/>
         <source>Moving the following files to destination folder:</source>
-        <translation>Verplaats de volgende bestanden naar de bestemmingsmap:</translation>
+        <translation>Verplaats de volgende bestanden naar de bestemming:</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="50"/>
@@ -757,12 +832,12 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
     <message>
         <location filename="../fileoperationdialog.cpp" line="51"/>
         <source>Copying the following files to destination folder:</source>
-        <translation>Kopieer de volgende bestanden naar de bestemmingsmap:</translation>
+        <translation>Kopieer de volgende bestanden naar de bestemming:</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="54"/>
         <source>Trash Files</source>
-        <translation>Bestanden naar de prullenbak verplaatsen</translation>
+        <translation>Verplaatsen naar prullenbak</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="55"/>
@@ -772,109 +847,116 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
     <message>
         <location filename="../fileoperationdialog.cpp" line="58"/>
         <source>Delete Files</source>
-        <translation>Bestanden wissen</translation>
+        <translation>Bestanden verwijderen</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="59"/>
         <source>Deleting the following files:</source>
-        <translation>Wis de volgende bestanden:</translation>
+        <translation>Verwijder de volgende bestanden:</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="64"/>
         <source>Create Symlinks</source>
-        <translation>Symbolische koppelingen maken</translation>
+        <translation>Snelkoppelingen maken</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="65"/>
         <source>Creating symlinks for the following files:</source>
-        <translation>Symbolische maken voor de volgende bestanden:</translation>
+        <translation>Maak snelkoppelingen voor de volgende bestanden:</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="68"/>
         <source>Change Attributes</source>
-        <translation>Eigenschappen veranderen</translation>
+        <translation>Eigenschappen aanpassen</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="69"/>
         <source>Changing attributes of the following files:</source>
-        <translation>Eigenschappen van de volgende bestanden veranderen:</translation>
+        <translation>Pas de eigenschappen van de volgende bestanden aan:</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="74"/>
         <source>Restore Trashed Files</source>
-        <translation>Bestanden terugzetten vanuit de prullenbak</translation>
+        <translation>Bestanden terugzetten</translation>
     </message>
     <message>
         <location filename="../fileoperationdialog.cpp" line="75"/>
         <source>Restoring the following files from trash can:</source>
-        <translation>De volgende bestanden terugzetten vanuit de prullenbak:</translation>
+        <translation>Herstel de volgende bestanden uit de prullenbak:</translation>
     </message>
     <message>
-        <location filename="../fileoperationdialog.cpp" line="146"/>
-        <location filename="../fileoperationdialog.cpp" line="152"/>
+        <location filename="../fileoperationdialog.cpp" line="149"/>
+        <location filename="../fileoperationdialog.cpp" line="155"/>
         <source>Error</source>
-        <translation>Fout</translation>
+        <translation>Foutmelding</translation>
     </message>
 </context>
 <context>
     <name>Fm::FilePropsDialog</name>
     <message>
-        <location filename="../filepropsdialog.cpp" line="162"/>
+        <location filename="../filepropsdialog.cpp" line="164"/>
         <source>View folder content</source>
-        <translation>Toon mapinhoud</translation>
+        <translation>Mapinhoud tonen</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="163"/>
+        <location filename="../filepropsdialog.cpp" line="165"/>
         <source>View and modify folder content</source>
-        <translation>Mapinhoud tonen en wijzigen</translation>
+        <translation>Mapinhoud tonen en aanpassen</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="167"/>
+        <location filename="../filepropsdialog.cpp" line="169"/>
         <source>Read</source>
         <translation>Lezen</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="168"/>
+        <location filename="../filepropsdialog.cpp" line="170"/>
         <source>Read and write</source>
         <translation>Lezen en schrijven</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="170"/>
+        <location filename="../filepropsdialog.cpp" line="172"/>
         <source>Forbidden</source>
         <translation>Verboden</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="287"/>
+        <location filename="../filepropsdialog.cpp" line="289"/>
         <source>Files of different types</source>
         <translation>Bestanden van verschillende soorten</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="310"/>
+        <location filename="../filepropsdialog.cpp" line="312"/>
+        <location filename="../filepropsdialog.cpp" line="319"/>
+        <location filename="../filepropsdialog.cpp" line="326"/>
+        <source>N/A</source>
+        <translation>n/b</translation>
+    </message>
+    <message>
+        <location filename="../filepropsdialog.cpp" line="330"/>
         <source>Multiple Files</source>
         <translation>Meerdere bestanden</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="336"/>
+        <location filename="../filepropsdialog.cpp" line="407"/>
         <source>%p% used</source>
         <translation>%p% gebruikt</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="337"/>
+        <location filename="../filepropsdialog.cpp" line="408"/>
         <source>%1 Free of %2</source>
-        <translation>%1 Vrij van %2</translation>
+        <translation>%1/%2 vrij</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="382"/>
+        <location filename="../filepropsdialog.cpp" line="454"/>
         <source>no file</source>
         <translation>geen bestand</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="384"/>
+        <location filename="../filepropsdialog.cpp" line="456"/>
         <source>one file</source>
         <translation>één bestand</translation>
     </message>
     <message numerus="yes">
-        <location filename="../filepropsdialog.cpp" line="386"/>
+        <location filename="../filepropsdialog.cpp" line="458"/>
         <source>%Ln files</source>
         <translation>
             <numerusform>%Ln bestanden</numerusform>
@@ -882,40 +964,42 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
         </translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="420"/>
+        <location filename="../filepropsdialog.cpp" line="492"/>
+        <location filename="../filepropsdialog.cpp" line="537"/>
         <source>Select an icon</source>
         <translation>Kies een pictogram</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="422"/>
+        <location filename="../filepropsdialog.cpp" line="494"/>
+        <location filename="../filepropsdialog.cpp" line="539"/>
         <source>Images (*.png *.xpm *.svg *.svgz )</source>
         <translation>Afbeeldingen (*.png *.xpm *.svg *.svgz )</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="518"/>
+        <location filename="../filepropsdialog.cpp" line="645"/>
         <source>Apply changes</source>
-        <translation>Veranderingen toepassen</translation>
+        <translation>Wijzigingen toepassen</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="519"/>
+        <location filename="../filepropsdialog.cpp" line="646"/>
         <source>Do you want to recursively apply these changes to all files and sub-folders?</source>
-        <translation>Wilt u de veranderingen toepassen op alle bestanden en onderliggende submappen?</translation>
+        <translation>Wilt u de wijzigingen toepassen op alle bestanden en onderliggende mappen?</translation>
     </message>
 </context>
 <context>
     <name>Fm::FileSearchDialog</name>
     <message>
-        <location filename="../filesearchdialog.cpp" line="128"/>
+        <location filename="../filesearchdialog.cpp" line="157"/>
         <source>Error</source>
-        <translation>Fout</translation>
+        <translation>Foutmelding</translation>
     </message>
     <message>
-        <location filename="../filesearchdialog.cpp" line="128"/>
+        <location filename="../filesearchdialog.cpp" line="157"/>
         <source>You should add at least one directory to search.</source>
         <translation>U dient tenminste één te doorzoeken map toe te voegen.</translation>
     </message>
     <message>
-        <location filename="../filesearchdialog.cpp" line="135"/>
+        <location filename="../filesearchdialog.cpp" line="164"/>
         <source>Select a folder</source>
         <translation>Kies een map</translation>
     </message>
@@ -923,12 +1007,12 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
 <context>
     <name>Fm::FileTransferJob</name>
     <message>
-        <location filename="../core/filetransferjob.cpp" line="471"/>
+        <location filename="../core/filetransferjob.cpp" line="486"/>
         <source>Cannot copy a directory into itself!</source>
         <translation>Kan map niet naar zichzelf kopiëren!</translation>
     </message>
     <message>
-        <location filename="../core/filetransferjob.cpp" line="522"/>
+        <location filename="../core/filetransferjob.cpp" line="537"/>
         <source>Cannot create a link on non-native filesystem</source>
         <translation>Kan geen koppeling aanmaken op een niet-eigen bestandssysteem</translation>
     </message>
@@ -936,102 +1020,107 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
 <context>
     <name>Fm::FolderMenu</name>
     <message>
-        <location filename="../foldermenu.cpp" line="41"/>
-        <source>Create &amp;New</source>
-        <translation>&amp;Nieuw maken</translation>
+        <location filename="../foldermenu.cpp" line="58"/>
+        <source>Empty Trash</source>
+        <translation>Prullenbak legen</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="48"/>
+        <location filename="../foldermenu.cpp" line="70"/>
+        <source>Create &amp;New</source>
+        <translation>&amp;Nieuw</translation>
+    </message>
+    <message>
+        <location filename="../foldermenu.cpp" line="75"/>
         <source>&amp;Paste</source>
         <translation>&amp;Plakken</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="54"/>
+        <location filename="../foldermenu.cpp" line="89"/>
         <source>Select &amp;All</source>
-        <translation>&amp;Alle kiezen</translation>
+        <translation>&amp;Alles selecteren</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="58"/>
-        <source>Invert Selection</source>
-        <translation>Keuze omdraaien</translation>
-    </message>
-    <message>
-        <location filename="../foldermenu.cpp" line="64"/>
+        <location filename="../foldermenu.cpp" line="100"/>
         <source>Sorting</source>
-        <translation>Rangschikking</translation>
+        <translation>Sortering</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="69"/>
+        <location filename="../foldermenu.cpp" line="105"/>
         <source>Show Hidden</source>
-        <translation>Toon verborgen</translation>
+        <translation>Verborgen bestanden/mappen tonen</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="98"/>
+        <location filename="../foldermenu.cpp" line="140"/>
         <source>Folder Pr&amp;operties</source>
         <translation>Map&amp;eigenschappen</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="141"/>
+        <location filename="../foldermenu.cpp" line="183"/>
         <source>Output</source>
         <translation>Uitvoer</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="163"/>
+        <location filename="../foldermenu.cpp" line="205"/>
         <source>By File Name</source>
         <translation>Op bestandnaam</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="164"/>
+        <location filename="../foldermenu.cpp" line="206"/>
         <source>By Modification Time</source>
         <translation>Op wijzigingstijdstip</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="167"/>
+        <location filename="../foldermenu.cpp" line="207"/>
+        <source>By Creation Time</source>
+        <translation>Op aanmaaktijdstip</translation>
+    </message>
+    <message>
+        <location filename="../foldermenu.cpp" line="210"/>
         <source>By Deletion Time</source>
         <translation>Op verwijdertijdstip</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="170"/>
+        <location filename="../foldermenu.cpp" line="213"/>
         <source>By File Size</source>
-        <translation>Op bestandgrootte</translation>
+        <translation>Op bestandsgrootte</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="171"/>
+        <location filename="../foldermenu.cpp" line="214"/>
         <source>By File Type</source>
-        <translation>Op bestandsoort</translation>
+        <translation>Op bestandstype</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="172"/>
+        <location filename="../foldermenu.cpp" line="215"/>
         <source>By File Owner</source>
-        <translation>Op bestandeigenaar</translation>
+        <translation>Op eigenaar</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="173"/>
+        <location filename="../foldermenu.cpp" line="216"/>
         <source>By File Group</source>
         <translation>Op bestandsgroep</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="179"/>
+        <location filename="../foldermenu.cpp" line="222"/>
         <source>Ascending</source>
         <translation>Oplopend</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="184"/>
+        <location filename="../foldermenu.cpp" line="227"/>
         <source>Descending</source>
         <translation>Aflopend</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="201"/>
+        <location filename="../foldermenu.cpp" line="244"/>
         <source>Folder First</source>
-        <translation>Map eerst</translation>
+        <translation>Mappen bovenaan</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="209"/>
+        <location filename="../foldermenu.cpp" line="252"/>
         <source>Hidden Last</source>
-        <translation type="unfinished"></translation>
+        <translation>Verborgen onderaan</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="217"/>
+        <location filename="../foldermenu.cpp" line="260"/>
         <source>Case Sensitive</source>
         <translation>Hoofdlettergevoelig</translation>
     </message>
@@ -1039,72 +1128,87 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
 <context>
     <name>Fm::FolderModel</name>
     <message>
-        <location filename="../foldermodel.cpp" line="303"/>
+        <location filename="../foldermodel.cpp" line="306"/>
         <source>Location:</source>
         <translation>Locatie:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="306"/>
+        <location filename="../foldermodel.cpp" line="310"/>
         <source>File type:</source>
         <translation>Bestandstype:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="310"/>
+        <location filename="../foldermodel.cpp" line="315"/>
         <source>File size:</source>
         <translation>Bestandsgrootte:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="314"/>
+        <location filename="../foldermodel.cpp" line="319"/>
         <source>Last modified:</source>
         <translation>Laatst gewijzigd:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="315"/>
+        <location filename="../foldermodel.cpp" line="320"/>
         <source>Last accessed:</source>
-        <translation>Laatst benaderd:</translation>
+        <translation>Laatst geopend:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="319"/>
+        <location filename="../foldermodel.cpp" line="321"/>
+        <source>N/A</source>
+        <translation>n/b</translation>
+    </message>
+    <message>
+        <location filename="../foldermodel.cpp" line="323"/>
+        <source>Created:</source>
+        <translation>Aangemaakt op:</translation>
+    </message>
+    <message>
+        <location filename="../foldermodel.cpp" line="328"/>
         <source>Owner:</source>
         <translation>Eigenaar:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="320"/>
+        <location filename="../foldermodel.cpp" line="329"/>
         <source>Group:</source>
         <translation>Groep:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="384"/>
+        <location filename="../foldermodel.cpp" line="396"/>
         <source>Name</source>
         <translation>Naam</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="387"/>
+        <location filename="../foldermodel.cpp" line="399"/>
         <source>Type</source>
-        <translation>Soort</translation>
+        <translation>Type</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="390"/>
+        <location filename="../foldermodel.cpp" line="402"/>
         <source>Size</source>
         <translation>Grootte</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="393"/>
+        <location filename="../foldermodel.cpp" line="405"/>
         <source>Modified</source>
         <translation>Gewijzigd</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="396"/>
+        <location filename="../foldermodel.cpp" line="408"/>
+        <source>Created</source>
+        <translation>Aangemaakt</translation>
+    </message>
+    <message>
+        <location filename="../foldermodel.cpp" line="411"/>
         <source>Deleted</source>
         <translation>Verwijderd</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="399"/>
+        <location filename="../foldermodel.cpp" line="414"/>
         <source>Owner</source>
         <translation>Eigenaar</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="402"/>
+        <location filename="../foldermodel.cpp" line="417"/>
         <source>Group</source>
         <translation>Groep</translation>
     </message>
@@ -1112,12 +1216,12 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
 <context>
     <name>Fm::FolderViewTreeView</name>
     <message>
-        <location filename="../folderview.cpp" line="373"/>
+        <location filename="../folderview.cpp" line="409"/>
         <source>Auto-resize columns</source>
-        <translation>Automatisch herschalen kolommen</translation>
+        <translation>Kolommen automatisch inpassen</translation>
     </message>
     <message>
-        <location filename="../folderview.cpp" line="390"/>
+        <location filename="../folderview.cpp" line="426"/>
         <source>Visible Columns</source>
         <translation>Getoonde kolommen</translation>
     </message>
@@ -1127,18 +1231,18 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
     <message>
         <location filename="../fontbutton.cpp" line="46"/>
         <source>Bold</source>
-        <translation>Vet</translation>
+        <translation>Vetgedrukt</translation>
     </message>
     <message>
         <location filename="../fontbutton.cpp" line="50"/>
         <source>Italic</source>
-        <translation>Schuin</translation>
+        <translation>Cursief</translation>
     </message>
 </context>
 <context>
     <name>Fm::MountOperationPasswordDialog</name>
     <message>
-        <location filename="../mountoperationpassworddialog.cpp" line="40"/>
+        <location filename="../mountoperationpassworddialog.cpp" line="42"/>
         <source>&amp;Connect</source>
         <translation>&amp;Verbinden</translation>
     </message>
@@ -1146,25 +1250,25 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
 <context>
     <name>Fm::PathBar</name>
     <message>
-        <location filename="../pathbar.cpp" line="130"/>
+        <location filename="../pathbar.cpp" line="122"/>
         <source>&amp;Edit Path</source>
-        <translation>Pad &amp;bewerken</translation>
+        <translation>Locatie b&amp;ewerken</translation>
     </message>
     <message>
-        <location filename="../pathbar.cpp" line="133"/>
+        <location filename="../pathbar.cpp" line="125"/>
         <source>&amp;Copy Path</source>
-        <translation>Pad &amp;kopiëren</translation>
+        <translation>Locatie &amp;kopiëren</translation>
     </message>
 </context>
 <context>
     <name>Fm::PlacesModel</name>
     <message>
-        <location filename="../placesmodel.cpp" line="47"/>
+        <location filename="../placesmodel.cpp" line="46"/>
         <source>Places</source>
         <translation>Locaties</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="55"/>
+        <location filename="../placesmodel.cpp" line="54"/>
         <source>Desktop</source>
         <translation>Bureaublad</translation>
     </message>
@@ -1174,22 +1278,22 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
         <translation>Prullenbak</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="61"/>
+        <location filename="../placesmodel.cpp" line="60"/>
         <source>Computer</source>
         <translation>Computer</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="69"/>
+        <location filename="../placesmodel.cpp" line="68"/>
         <source>Applications</source>
-        <translation>Toepassingen</translation>
+        <translation>Programma&apos;s</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="78"/>
+        <location filename="../placesmodel.cpp" line="77"/>
         <source>Network</source>
         <translation>Netwerk</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="82"/>
+        <location filename="../placesmodel.cpp" line="81"/>
         <source>Devices</source>
         <translation>Apparaten</translation>
     </message>
@@ -1202,66 +1306,66 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
 <context>
     <name>Fm::PlacesView</name>
     <message>
-        <location filename="../placesview.cpp" line="496"/>
+        <location filename="../placesview.cpp" line="572"/>
         <source>Empty Trash</source>
-        <translation>Prullenbak ledigen</translation>
+        <translation>Prullenbak legen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="481"/>
+        <location filename="../placesview.cpp" line="555"/>
         <source>Open in New Tab</source>
-        <translation>Open in nieuw tabblad</translation>
+        <translation>Openen op nieuw tabblad</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="484"/>
+        <location filename="../placesview.cpp" line="559"/>
         <source>Open in New Window</source>
-        <translation>Open in nieuw venster</translation>
+        <translation>Openen in nieuw venster</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="516"/>
-        <location filename="../placesview.cpp" line="573"/>
+        <location filename="../placesview.cpp" line="592"/>
+        <location filename="../placesview.cpp" line="654"/>
         <source>Hide</source>
         <translation>Verbergen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="533"/>
+        <location filename="../placesview.cpp" line="609"/>
         <source>Move Bookmark Up</source>
         <translation>Bladwijzer omhoog verplaatsen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="538"/>
+        <location filename="../placesview.cpp" line="616"/>
         <source>Move Bookmark Down</source>
-        <translation>Bladwijzer naar beneden verplaatsen</translation>
+        <translation>Bladwijzer omlaag verplaatsen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="542"/>
+        <location filename="../placesview.cpp" line="621"/>
         <source>Rename Bookmark</source>
-        <translation>Bladwijzer hernoemen</translation>
+        <translation>Bladwijzernaam wijzigen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="545"/>
+        <location filename="../placesview.cpp" line="625"/>
         <source>Remove Bookmark</source>
         <translation>Bladwijzer verwijderen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="554"/>
-        <location filename="../placesview.cpp" line="587"/>
+        <location filename="../placesview.cpp" line="635"/>
+        <location filename="../placesview.cpp" line="668"/>
         <source>Unmount</source>
         <translation>Ontkoppelen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="558"/>
+        <location filename="../placesview.cpp" line="639"/>
         <source>Mount</source>
         <translation>Aankoppelen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="564"/>
+        <location filename="../placesview.cpp" line="645"/>
         <source>Eject</source>
         <translation>Uitwerpen</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="599"/>
+        <location filename="../placesview.cpp" line="680"/>
         <source>Show All Entries</source>
-        <translation>Toon alle invoervelden</translation>
+        <translation>Alle items tonen</translation>
     </message>
 </context>
 <context>
@@ -1272,7 +1376,7 @@ Wilt u ze in plaats daarvan blijvend verwijderen?</translation>
         <source>Type: %1
 Size: %2
 Modified: %3</source>
-        <translation>Soort: %1
+        <translation>Type: %1
 Omvang: %2
 Gewijzigd: %3</translation>
     </message>
@@ -1281,31 +1385,36 @@ Gewijzigd: %3</translation>
         <location filename="../renamedialog.cpp" line="83"/>
         <source>Type: %1
 Modified: %2</source>
-        <translation>Soort: %1
-Veranderd: %2</translation>
+        <translation>Type: %1
+Gewijzigd: %2</translation>
     </message>
     <message>
-        <location filename="../renamedialog.cpp" line="96"/>
+        <location filename="../renamedialog.cpp" line="104"/>
         <source>&amp;Overwrite</source>
         <translation>Over&amp;schrijven</translation>
     </message>
     <message>
-        <location filename="../renamedialog.cpp" line="98"/>
+        <location filename="../renamedialog.cpp" line="106"/>
         <source>&amp;Rename</source>
-        <translation>&amp;Hernoemen</translation>
+        <translation>&amp;Naam wijzigen</translation>
+    </message>
+    <message>
+        <location filename="../renamedialog.cpp" line="116"/>
+        <source>&lt;p&gt;&lt;b&gt;The file cannot overwrite itself.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Please select another name.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;b&gt;Het bestand kan niet zichzelf overschrijven.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Geef een andere naam op.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>Fm::SidePane</name>
     <message>
-        <location filename="../sidepane.cpp" line="45"/>
+        <location filename="../sidepane.cpp" line="46"/>
         <source>Lists</source>
-        <translation type="unfinished"></translation>
+        <translation>Lijsten</translation>
     </message>
     <message>
-        <location filename="../sidepane.cpp" line="46"/>
+        <location filename="../sidepane.cpp" line="47"/>
         <source>Directory Tree</source>
-        <translation>Boomstructuur van de mappen</translation>
+        <translation>Boomweergave</translation>
     </message>
 </context>
 <context>
@@ -1313,7 +1422,7 @@ Veranderd: %2</translation>
     <message>
         <location filename="../core/untrashjob.cpp" line="35"/>
         <source>Cannot untrash file &apos;%s&apos;: original path not known</source>
-        <translation>Kan bestand &apos;%s&apos; niet uit de prullenbak halen: oorspronkelijk pad onbekend</translation>
+        <translation>Kan bestand ‘%s’ niet uit de prullenbak halen: oorspronkelijke locatie onbekend</translation>
     </message>
 </context>
 <context>
@@ -1331,12 +1440,12 @@ Veranderd: %2</translation>
     <message>
         <location filename="../mount-operation-password.ui" line="58"/>
         <source>Connect as u&amp;ser:</source>
-        <translation>Verbinden als &amp;gebruiker:</translation>
+        <translation>Verbinden al&amp;s gebruiker:</translation>
     </message>
     <message>
         <location filename="../mount-operation-password.ui" line="79"/>
         <source>&amp;Username:</source>
-        <translation>Gebruikers&amp;naam:</translation>
+        <translation>Gebr&amp;uikersnaam:</translation>
     </message>
     <message>
         <location filename="../mount-operation-password.ui" line="102"/>
@@ -1355,100 +1464,111 @@ Veranderd: %2</translation>
     </message>
     <message>
         <location filename="../mount-operation-password.ui" line="137"/>
-        <source>Remember password for &amp;this session</source>
-        <translation type="unfinished"></translation>
+        <source>Session length is determined by password manager</source>
+        <translation>De sessieduur wordt bepaald door de wachtwoordbeheerder</translation>
     </message>
     <message>
-        <location filename="../mount-operation-password.ui" line="147"/>
+        <location filename="../mount-operation-password.ui" line="140"/>
+        <source>Remember password for &amp;this session</source>
+        <translation>Wachtwoord deze sessie on&amp;thouden</translation>
+    </message>
+    <message>
+        <location filename="../mount-operation-password.ui" line="150"/>
         <source>Remember &amp;forever</source>
-        <translation>Wachtwoord &amp;voor altijd onthouden</translation>
+        <translation>Wachtwoord altijd ont&amp;houden</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../filelauncher.cpp" line="104"/>
-        <location filename="../filepropsdialog.cpp" line="543"/>
-        <location filename="../mountoperation.cpp" line="207"/>
-        <location filename="../utilities.cpp" line="147"/>
-        <location filename="../utilities.cpp" line="283"/>
+        <location filename="../filelauncher.cpp" line="124"/>
+        <location filename="../filepropsdialog.cpp" line="671"/>
+        <location filename="../mountoperation.cpp" line="297"/>
+        <location filename="../utilities.cpp" line="154"/>
+        <location filename="../utilities.cpp" line="318"/>
         <source>Error</source>
-        <translation>Fout</translation>
+        <translation>Foutmelding</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="163"/>
+        <location filename="../utilities.cpp" line="170"/>
         <source>Rename File</source>
-        <translation>Bestand hernoemen</translation>
+        <translation>Bestandsnaam wijzigen</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="164"/>
+        <location filename="../utilities.cpp" line="171"/>
         <source>Please enter a new name:</source>
-        <translation>Voer a.u.b. een nieuwe naam in:</translation>
+        <translation>Voer een nieuwe naam in:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="223"/>
+        <location filename="../utilities.cpp" line="230"/>
         <source>Create Folder</source>
         <translation>Map maken</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="228"/>
+        <location filename="../utilities.cpp" line="235"/>
         <source>Please enter a new file name:</source>
-        <translation>Voer a.u.b. een nieuwe bestandnaam in:</translation>
+        <translation>Voer een nieuwe bestandsnaam in:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="229"/>
-        <source>New text file</source>
-        <translation>Nieuw tekstbestand</translation>
+        <location filename="../utilities.cpp" line="236"/>
+        <source>New file</source>
+        <translation>Nieuw bestand</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="233"/>
+        <location filename="../utilities.cpp" line="240"/>
         <source>Please enter a new folder name:</source>
-        <translation>Voer a.u.b. een nieuwe mapnaam in:</translation>
+        <translation>Voer een nieuwe mapnaam in:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="234"/>
+        <location filename="../utilities.cpp" line="241"/>
         <source>New folder</source>
         <translation>Nieuwe map</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="239"/>
+        <location filename="../utilities.cpp" line="246"/>
         <source>Enter a name for the new %1:</source>
-        <translation>Voer a.u.b. een naam in voor de/het nieuwe %1:</translation>
+        <translation>Voer een naam in voor de/het nieuwe %1:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="224"/>
+        <location filename="../utilities.cpp" line="231"/>
         <source>Create File</source>
         <translation>Bestand maken</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="560"/>
+        <location filename="../filepropsdialog.cpp" line="689"/>
         <source>Custom Icon Error</source>
-        <translation>Fout inzake aangepast pictogram</translation>
+        <translation>Fout omtrent aangepast pictogram</translation>
     </message>
     <message>
         <location filename="../core/basicfilelauncher.cpp" line="41"/>
         <source>The path is not mounted.</source>
-        <translation>Het pad is niet aangekoppeld.</translation>
+        <translation>De locatie is niet aangekoppeld.</translation>
     </message>
     <message>
-        <location filename="../core/basicfilelauncher.cpp" line="289"/>
+        <location filename="../core/basicfilelauncher.cpp" line="319"/>
         <source>Invalid desktop entry file: &apos;%1&apos;</source>
-        <translation>Ongeldig bureaubladsnelkoppelingsbestand: &apos;%1&apos;</translation>
+        <translation>Ongeldig snelkoppelingsbestand: ‘%1’</translation>
     </message>
     <message>
-        <location filename="../core/basicfilelauncher.cpp" line="325"/>
+        <location filename="../core/basicfilelauncher.cpp" line="355"/>
         <source>No default application is set to launch &apos;%1&apos;</source>
-        <translation>Er is geen standaardtoepassing ingesteld om &apos;%1&apos; te starten</translation>
+        <translation>Er is geen standaardprogramma ingesteld om ‘%1’ mee te openen</translation>
     </message>
     <message>
-        <location filename="../core/basicfilelauncher.cpp" line="366"/>
+        <location filename="../core/basicfilelauncher.cpp" line="396"/>
         <source>Cannot set working directory to &apos;%1&apos;: %2</source>
-        <translation>Kan werkmap niet instellen op &apos;%1&apos;: %2</translation>
+        <translation>Kan werkmap niet instellen op ‘%1’: %2</translation>
     </message>
     <message>
-        <location filename="../placesmodelitem.cpp" line="123"/>
+        <location filename="../placesmodelitem.cpp" line="127"/>
         <source>Identifier: </source>
         <translation>Identificatie: </translation>
+    </message>
+    <message>
+        <location filename="../foldermodelitem.cpp" line="61"/>
+        <location filename="../foldermodelitem.cpp" line="74"/>
+        <source>N/A</source>
+        <translation>n/b</translation>
     </message>
 </context>
 <context>
@@ -1456,27 +1576,27 @@ Veranderd: %2</translation>
     <message>
         <location filename="../rename-dialog.ui" line="14"/>
         <source>Confirm to replace files</source>
-        <translation>Vervangen van bestanden bevestigen</translation>
+        <translation>Bestandsvervanging bevestigen</translation>
     </message>
     <message>
         <location filename="../rename-dialog.ui" line="35"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;There is already a file with the same name in this location.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Do you want to replace the existing file?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Er is al een bestand met dezelfde naam op deze plek.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Wilt u het bestaande bestand vervangen?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Er is al een bestand met dezelfde naam op deze locatie.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Wilt u het bestaande bestand vervangen?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../rename-dialog.ui" line="63"/>
         <source>with the following file?</source>
-        <translation>met het volgende bestand?</translation>
+        <translation>door het volgende bestand?</translation>
     </message>
     <message>
         <location filename="../rename-dialog.ui" line="122"/>
         <source>&amp;File name:</source>
-        <translation>&amp;Bestandnaam:</translation>
+        <translation>&amp;Bestandsnaam:</translation>
     </message>
     <message>
         <location filename="../rename-dialog.ui" line="137"/>
         <source>Apply this option to all existing files</source>
-        <translation>Pas deze optie toe op alle bestaande bestanden</translation>
+        <translation>Optie toepassen op alle bestaande bestanden</translation>
     </message>
 </context>
 <context>
@@ -1489,169 +1609,169 @@ Veranderd: %2</translation>
     <message>
         <location filename="../filesearch.ui" line="29"/>
         <source>Name/Location</source>
-        <translation>Naam/locatie</translation>
+        <translation>Naam/Locatie</translation>
     </message>
     <message>
         <location filename="../filesearch.ui" line="35"/>
         <source>File Name Patterns:</source>
-        <translation>Patronen voor bestandnaam:</translation>
+        <translation>Bestandsnaampatronen:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="41"/>
+        <location filename="../filesearch.ui" line="44"/>
         <source>*</source>
         <translation>*</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="55"/>
+        <location filename="../filesearch.ui" line="58"/>
         <source>Use regular expression</source>
-        <translation>Gebruik reguliere uitdrukking</translation>
+        <translation>Reguliere uitdrukking gebruiken</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="68"/>
+        <location filename="../filesearch.ui" line="71"/>
         <source>Places to Search:</source>
         <translation>Te doorzoeken locaties:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="81"/>
+        <location filename="../filesearch.ui" line="84"/>
         <source>&amp;Add</source>
         <translation>&amp;Toevoegen</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="93"/>
+        <location filename="../filesearch.ui" line="96"/>
         <source>&amp;Remove</source>
-        <translation>&amp;Verwijderen</translation>
+        <translation>Ve&amp;rwijderen</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="129"/>
+        <location filename="../filesearch.ui" line="132"/>
         <source>Search for hidden files</source>
-        <translation>Zoek naar verborgen bestanden</translation>
+        <translation>Zoeken naar verborgen bestanden</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="140"/>
+        <location filename="../filesearch.ui" line="143"/>
         <source>File Type</source>
-        <translation>Bestandsoort</translation>
+        <translation>Bestandstype</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="146"/>
+        <location filename="../filesearch.ui" line="149"/>
         <source>Only search for files of following types:</source>
-        <translation>Zoek alleen naar bestanden van de volgende soorten:</translation>
+        <translation>Alleen zoeken naar bestanden met de volgende types:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="152"/>
+        <location filename="../filesearch.ui" line="155"/>
         <source>Text files</source>
         <translation>Tekstbestanden</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="159"/>
+        <location filename="../filesearch.ui" line="162"/>
         <source>Image files</source>
-        <translation>Afbeeldingbestanden</translation>
+        <translation>Afbeeldingsbestanden</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="166"/>
+        <location filename="../filesearch.ui" line="169"/>
         <source>Audio files</source>
-        <translation>Geluidbestanden</translation>
+        <translation>Audiobestanden</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="173"/>
+        <location filename="../filesearch.ui" line="176"/>
         <source>Video files</source>
         <translation>Videobestanden</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="180"/>
+        <location filename="../filesearch.ui" line="183"/>
         <source>Documents</source>
         <translation>Documenten</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="187"/>
+        <location filename="../filesearch.ui" line="190"/>
         <source>Folders</source>
         <translation>Mappen</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="211"/>
+        <location filename="../filesearch.ui" line="214"/>
         <source>Content</source>
         <translation>Inhoud</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="217"/>
+        <location filename="../filesearch.ui" line="220"/>
         <source>File contains:</source>
         <translation>Bestand bevat:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="233"/>
+        <location filename="../filesearch.ui" line="240"/>
         <source>&amp;Use regular expression</source>
-        <translation>Gebruik gewone uitdrukkingen</translation>
+        <translation>Reguliere uitdrukking gebr&amp;uiken</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="260"/>
+        <location filename="../filesearch.ui" line="267"/>
         <source>Properties</source>
         <translation>Eigenschappen</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="266"/>
+        <location filename="../filesearch.ui" line="273"/>
         <source>File Size:</source>
-        <translation>Bestandgrootte:</translation>
+        <translation>Bestandsgrootte:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="295"/>
+        <location filename="../filesearch.ui" line="302"/>
         <source>Larger than:</source>
         <translation>Groter dan:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="309"/>
-        <location filename="../filesearch.ui" line="339"/>
+        <location filename="../filesearch.ui" line="316"/>
+        <location filename="../filesearch.ui" line="346"/>
         <source>Bytes</source>
         <translation>Bytes</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="314"/>
-        <location filename="../filesearch.ui" line="344"/>
+        <location filename="../filesearch.ui" line="321"/>
+        <location filename="../filesearch.ui" line="351"/>
         <source>KiB</source>
         <translation>KiB</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="319"/>
-        <location filename="../filesearch.ui" line="349"/>
+        <location filename="../filesearch.ui" line="326"/>
+        <location filename="../filesearch.ui" line="356"/>
         <source>MiB</source>
         <translation>MiB</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="324"/>
-        <location filename="../filesearch.ui" line="354"/>
+        <location filename="../filesearch.ui" line="331"/>
+        <location filename="../filesearch.ui" line="361"/>
         <source>GiB</source>
         <translation>GiB</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="274"/>
+        <location filename="../filesearch.ui" line="281"/>
         <source>Smaller than:</source>
         <translation>Kleiner dan:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="48"/>
+        <location filename="../filesearch.ui" line="51"/>
         <source>Case sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Hoofdlettergevoelig</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="122"/>
+        <location filename="../filesearch.ui" line="125"/>
         <source>Search in subdirectories</source>
-        <translation>Zoek in submappen</translation>
+        <translation>Onderliggende mappen doorzoeken</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="226"/>
+        <location filename="../filesearch.ui" line="233"/>
         <source>Case sensiti&amp;ve</source>
-        <translation type="unfinished"></translation>
+        <translation>Hoofdletterge&amp;voelig</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="370"/>
+        <location filename="../filesearch.ui" line="377"/>
         <source>Last Modified Time:</source>
-        <translation>Laatste wijzigingstijdstip:</translation>
+        <translation>Laatst gewijzigd om:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="378"/>
+        <location filename="../filesearch.ui" line="385"/>
         <source>Earlier than:</source>
         <translation>Vroeger dan:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="385"/>
+        <location filename="../filesearch.ui" line="392"/>
         <source>Later than:</source>
         <translation>Later dan:</translation>
     </message>

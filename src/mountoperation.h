@@ -26,6 +26,7 @@
 #include <QDialog>
 #include <gio/gio.h>
 #include <QPointer>
+#include "mountoperationpassworddialog_p.h"
 
 #include "core/filepath.h"
 
@@ -37,7 +38,7 @@ namespace Fm {
 // Need to find a better API design which make things fully async and cancellable.
 
 // FIXME: parent_ does not work. All dialogs shown by the mount operation has no parent window assigned.
-// FIXME: Need to reconsider the propery way of API design. Blocking sync calls are handy, but
+// FIXME: Need to reconsider the proper way of API design. Blocking sync calls are handy, but
 // indeed causes some problems. :-(
 
 class LIBFM_QT_API MountOperation: public QObject {
@@ -47,7 +48,7 @@ public:
     explicit MountOperation(bool interactive = true, QWidget* parent = nullptr);
     ~MountOperation() override;
 
-    FM_QT_DEPRECATED
+    FM_QT6_DEPRECATED
     void mount(const Fm::FilePath& path) {
         mountEnclosingVolume(path);
     }
@@ -57,6 +58,10 @@ public:
     void mountMountable(const Fm::FilePath& mountable);
 
     void mount(GVolume* volume) {
+        if(!volume_) {
+            // see MountOperation::onAskPassword() for the reason
+            volume_ = reinterpret_cast<GVolume*>(g_object_ref(volume));
+        }
         g_volume_mount(volume, G_MOUNT_MOUNT_NONE, op, cancellable_, (GAsyncReadyCallback)onMountVolumeFinished, new QPointer<MountOperation>(this));
     }
 
@@ -74,16 +79,29 @@ public:
         g_object_unref(mount);
     }
 
+    void unmount(const Fm::FilePath& path) {
+        g_file_unmount_mountable_with_operation(path.gfile().get(), G_MOUNT_UNMOUNT_NONE, op, cancellable_, (GAsyncReadyCallback)onUnmountFileFinished, new QPointer<MountOperation>(this));
+    }
+
     void eject(GMount* mount) {
         prepareUnmount(mount);
         g_mount_eject_with_operation(mount, G_MOUNT_UNMOUNT_NONE, op, cancellable_, (GAsyncReadyCallback)onEjectMountFinished, new QPointer<MountOperation>(this));
     }
 
     void eject(GVolume* volume) {
-        GMount* mnt = g_volume_get_mount(volume);
-        prepareUnmount(mnt);
-        g_object_unref(mnt);
+        if(GMount* mnt = g_volume_get_mount(volume)) {
+            prepareUnmount(mnt);
+            g_object_unref(mnt);
+        }
         g_volume_eject_with_operation(volume, G_MOUNT_UNMOUNT_NONE, op, cancellable_, (GAsyncReadyCallback)onEjectVolumeFinished, new QPointer<MountOperation>(this));
+    }
+
+    void eject(const Fm::FilePath& path) {
+        if(GMount* mnt = g_file_find_enclosing_mount(path.gfile().get(), nullptr, nullptr)) {
+            prepareUnmount(mnt);
+            g_object_unref(mnt);
+        }
+        g_file_eject_mountable_with_operation(path.gfile().get(), G_MOUNT_UNMOUNT_NONE, op, cancellable_, (GAsyncReadyCallback)onEjectFileFinished, new QPointer<MountOperation>(this));
     }
 
     QWidget* parent() const {
@@ -99,7 +117,7 @@ public:
     }
 
     GMountOperation* mountOperation() {
-        return op;
+        return tmpOp_ ? tmpOp_ : op;
     }
 
     void cancel() {
@@ -141,8 +159,10 @@ private:
     static void onMountMountableFinished(GFile* file, GAsyncResult* res, QPointer<MountOperation>* pThis);
     static void onMountVolumeFinished(GVolume* volume, GAsyncResult* res, QPointer<MountOperation>* pThis);
     static void onUnmountMountFinished(GMount* mount, GAsyncResult* res, QPointer<MountOperation>* pThis);
+    static void onUnmountFileFinished(GFile* file, GAsyncResult* res, QPointer<MountOperation>* pThis);
     static void onEjectMountFinished(GMount* mount, GAsyncResult* res, QPointer<MountOperation>* pThis);
     static void onEjectVolumeFinished(GVolume* volume, GAsyncResult* res, QPointer<MountOperation>* pThis);
+    static void onEjectFileFinished(GFile* file, GAsyncResult* res, QPointer<MountOperation>* pThis);
 
     void handleFinish(GError* error);
 
@@ -154,6 +174,11 @@ private:
     bool interactive_;
     QEventLoop* eventLoop;
     bool autoDestroy_;
+
+    // only for a workaround; see MountOperation::onAskPassword()
+    GVolume* volume_;
+    GMountOperation* tmpOp_;
+    QPointer<MountOperationPasswordDialog> dlg_;
 };
 
 }

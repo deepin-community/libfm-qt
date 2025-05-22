@@ -24,7 +24,7 @@ BasicFileLauncher::~BasicFileLauncher() {
 }
 
 bool BasicFileLauncher::launchFiles(const FileInfoList& fileInfos, GAppLaunchContext* ctx) {
-    std::unordered_map<std::string, FileInfoList> mimeTypeToFiles;
+    FileInfoList mimeTypeInfos;
     FileInfoList folderInfos;
     FilePathList pathsToLaunch;
     // classify files according to different mimetypes
@@ -72,8 +72,7 @@ bool BasicFileLauncher::launchFiles(const FileInfoList& fileInfos, GAppLaunchCon
             folderInfos.emplace_back(fileInfo);
         }
         else {
-            auto& mimeType = fileInfo->mimeType();
-            mimeTypeToFiles[mimeType->name()].emplace_back(fileInfo);
+            mimeTypeInfos.emplace_back(fileInfo);
         }
     }
 
@@ -83,18 +82,61 @@ bool BasicFileLauncher::launchFiles(const FileInfoList& fileInfos, GAppLaunchCon
         openFolder(ctx, folderInfos, err);
     }
 
-    // open files of different mime-types with their default app
-    for(auto& typeFiles : mimeTypeToFiles) {
-        auto& mimeType = typeFiles.first;
-        auto& files = typeFiles.second;
-        GErrorPtr err;
-        GAppInfoPtr app{g_app_info_get_default_for_type(mimeType.c_str(), false), false};
-        if(!app) {
-            app = chooseApp(files, mimeType.c_str(), err);
+    // Open files of different mime-types with their default apps,
+    // grouping them together appropriately and respecting their order.
+    std::vector<std::pair<GAppInfoPtr, FileInfoList>> launches;
+    std::unordered_map<std::string, GAppInfoPtr> defaultApps;
+    for(const auto& file : mimeTypeInfos) {
+        const char* mimeTypeName = file->mimeType()->name();
+        auto it = defaultApps.find(mimeTypeName);
+        if(it == defaultApps.end()) {
+            GErrorPtr err;
+            GAppInfoPtr app{g_app_info_get_default_for_type(mimeTypeName, false), false};
+            if(!app) {
+                app = chooseApp(FileInfoList(), mimeTypeName, err);
+            }
+            if(app) {
+                // check whether this app is already found for another mimetype
+                bool alreadyFound = false;
+                for(auto& launch : launches) {
+                    if(g_app_info_equal(app.get(), launch.first.get())) {
+                        alreadyFound = true;
+                        // remember it as the default app for this mimetype
+                        defaultApps[mimeTypeName] = launch.first;
+                        // update this launch (add the file to it)
+                        auto tmp = launch.second;
+                        tmp.push_back(file);
+                        launch.second = tmp;
+                        break;
+                    }
+                }
+                if(!alreadyFound) {
+                    defaultApps[mimeTypeName] = app;
+                    // remember this launch
+                    FileInfoList files;
+                    files.push_back(file);
+                    launches.push_back(std::make_pair(app, files));
+                }
+            }
+            else {
+                // remember that this mimetype has no default app (don't ask again)
+                defaultApps[mimeTypeName] = nullptr;
+            }
         }
-        if(app) {
-            launchWithApp(app.get(), files.paths(), ctx);
+        else if(auto app = it->second) { // a default app was found/chosen before
+            for(auto& launch : launches) {
+                if(launch.first == app) {
+                    auto tmp = launch.second;
+                    tmp.push_back(file);
+                    launch.second = tmp;
+                    break;
+                }
+            }
         }
+    }
+    // perform the launches
+    for(const auto& launch : launches) {
+        launchWithApp(launch.first.get(), launch.second.paths(), ctx);
     }
 
     if(!pathsToLaunch.empty()) {
@@ -176,7 +218,9 @@ bool BasicFileLauncher::launchWithApp(GAppInfo* app, const FilePathList& paths, 
     }
     uris = g_list_reverse(uris);
     GErrorPtr err;
-    bool ret = bool(g_app_info_launch_uris(app, uris, ctx, &err));
+    // don't call g_app_info_launch_uris(app, uris, ctx, &err) because
+    // it uses the hard-coded terminal list of GLib -> gdesktopappinfo.c
+    bool ret = bool(fm_app_info_launch_uris(app, uris, ctx, &err));
     g_list_free_full(uris, g_free);
     if(!ret) {
         // FIXME: show error for all files
@@ -258,21 +302,7 @@ bool BasicFileLauncher::launchDesktopEntry(const char *desktopEntryName, const F
        it cannot be launched in fact */
 
     if(app) {
-        // don't call launchWithApp() because it calls g_app_info_launch_uris(),
-        // which uses the hard-coded terminal list of GLib -> gdesktopappinfo.c
-        GList* uris = nullptr;
-        for(auto& path : paths) {
-            auto uri = path.uri();
-            uris = g_list_prepend(uris, uri.release());
-        }
-        uris = g_list_reverse(uris);
-        GErrorPtr err;
-        ret = bool(fm_app_info_launch(app, uris, ctx, &err));
-        g_list_free_full(uris, g_free);
-        if(!ret) {
-            // FIXME: show error for all files
-            showError(ctx, err, paths.empty() ? FilePath{} : paths[0]);
-        }
+        ret = launchWithApp(app, paths, ctx);
         g_object_unref(app);
     }
     else {
@@ -300,7 +330,7 @@ FilePath BasicFileLauncher::handleShortcut(const FileInfoPtr& fileInfo, GAppLaun
     // if we know the target is a dir, we are not going to open it using other apps
     // for example: `network:///smb-root' is a shortcut targeting `smb:///' and it's also a dir
     if(fileInfo->isDir()) {
-        qDebug("shortcut is dir: %s", target.c_str());
+        //qDebug("shortcut is dir: %s", target.c_str());
         return FilePath::fromPathStr(target.c_str());
     }
 
@@ -390,6 +420,9 @@ bool BasicFileLauncher::launchExecutable(const FileInfoPtr &fileInfo, GAppLaunch
         default:
             break;
         }
+    }
+    else { // launch it if it has executable file type but is not really executable
+        return launchWithDefaultApp(fileInfo, ctx);
     }
     return false;
 }

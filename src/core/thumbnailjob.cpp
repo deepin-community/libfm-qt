@@ -14,11 +14,13 @@ namespace Fm {
 QThreadPool* ThumbnailJob::threadPool_ = nullptr;
 
 bool ThumbnailJob::localFilesOnly_ = true;
-int ThumbnailJob::maxThumbnailFileSize_ = 0;
+int ThumbnailJob::maxThumbnailFileSize_ = 4096; // in KiB
+int ThumbnailJob::maxExternalThumbnailFileSize_ = -1;
 
-ThumbnailJob::ThumbnailJob(FileInfoList files, int size):
+ThumbnailJob::ThumbnailJob(FileInfoList files, int size, bool isRemote):
     files_{std::move(files)},
     size_{size},
+    isRemote_{isRemote},
     md5Calc_{g_checksum_new(G_CHECKSUM_MD5)} {
 }
 
@@ -39,7 +41,7 @@ void ThumbnailJob::exec() {
 }
 
 QImage ThumbnailJob::readImageFromStream(GInputStream* stream, size_t len) {
-    // FIXME: should we set a limit here? Otherwise if len is too large, we can run out of memory.
+    // The size limit has been set in generateThumbnail().
     std::unique_ptr<unsigned char[]> buffer{new unsigned char[len]}; // allocate enough buffer
     unsigned char* pbuffer = buffer.get();
     size_t totalReadSize = 0;
@@ -65,16 +67,22 @@ QImage ThumbnailJob::loadForFile(const std::shared_ptr<const FileInfo> &file) {
         return QImage();
     }
 
+    if(localFilesOnly_ && isRemote_) {
+        return QImage();
+    }
+
     // thumbnails are stored in $XDG_CACHE_HOME/thumbnails/large|normal|failed
     QString thumbnailDir{QString::fromUtf8(g_get_user_cache_dir())};
     thumbnailDir += QLatin1String("/thumbnails/");
 
     // don't make thumbnails for files inside the thumbnail directory
-    if(FilePath::fromLocalPath(thumbnailDir.toLocal8Bit().constData()).isParentOf(file->dirPath())) {
+    if(file->dirPath() && FilePath::fromLocalPath(thumbnailDir.toLocal8Bit().constData()).isParentOf(file->dirPath())) {
         return QImage();
     }
 
-    QLatin1String subdir = size_ > 128 ? QLatin1String("large") : QLatin1String("normal");
+    QLatin1String subdir = size_ > 256 ? QLatin1String("x-large")
+                                       : size_ > 128 ? QLatin1String("large")
+                                                     : QLatin1String("normal");
     thumbnailDir += subdir;
 
     // generate base name of the thumbnail  => {md5 of uri}.png
@@ -85,7 +93,14 @@ QImage ThumbnailJob::loadForFile(const std::shared_ptr<const FileInfo> &file) {
         // if the file is changed to a symlink with the same time stamp
         auto target = file->target();
         if(!target.empty()) {
-            uri = FilePath::fromLocalPath(target.c_str()).uri();
+            if(file->dirPath()) {
+                // "FilePath::relativePath()" also covers absolute path names
+                // because "g_file_resolve_relative_path()" does
+                uri = file->dirPath().relativePath(target.c_str()).uri();
+            }
+            else {
+                uri = FilePath::fromLocalPath(target.c_str()).uri();
+            }
         }
     }
     if(!uri) {
@@ -136,7 +151,7 @@ bool ThumbnailJob::isThumbnailOutdated(const std::shared_ptr<const FileInfo>& fi
     return (thumb_mtime.isEmpty() || thumb_mtime.toULongLong() != file->mtime());
 }
 
-bool ThumbnailJob::readJpegExif(GInputStream *stream, QImage& thumbnail, QMatrix& matrix) {
+bool ThumbnailJob::readJpegExif(GInputStream *stream, QImage& thumbnail, QTransform& matrix) {
     /* try to extract thumbnails embedded in jpeg files */
     ExifLoader* exif_loader = exif_loader_new();
     while(!isCancelled()) {
@@ -201,11 +216,15 @@ QImage ThumbnailJob::generateThumbnail(const std::shared_ptr<const FileInfo>& fi
     QImage result;
     auto mime_type = file->mimeType();
     if(isSupportedImageType(mime_type)) {
+        if (file->size() > static_cast<uint64_t>(maxThumbnailFileSize_) * 1024) {
+            return result;
+        }
         GFileInputStreamPtr ins{g_file_read(origPath.gfile().get(), cancellable_.get(), nullptr), false};
-        if(!ins)
-            return QImage();
+        if(!ins) {
+            return result;
+        }
         bool fromExif = false;
-        QMatrix matrix;
+        QTransform matrix;
         if(strcmp(mime_type->name(), "image/jpeg") == 0) { // if this is a jpeg file
             // try to get the thumbnail embedded in EXIF data
             if(readJpegExif(G_INPUT_STREAM(ins.get()), result, matrix)) {
@@ -221,7 +240,7 @@ QImage ThumbnailJob::generateThumbnail(const std::shared_ptr<const FileInfo>& fi
 
         if(!result.isNull()) { // the image is successfully loaded
             // scale the image as needed
-            int target_size = size_ > 128 ? 256 : 128;
+            int target_size = size_ > 256 ? 512 : size_ > 128 ? 256 : 128;
 
             // only scale the original image if it's too large
             if(result.width() > target_size || result.height() > target_size) {
@@ -242,8 +261,12 @@ QImage ThumbnailJob::generateThumbnail(const std::shared_ptr<const FileInfo>& fi
         }
     }
     else { // the image format is not supported, try to find an external thumbnailer
-        // try all available external thumbnailers for it until sucess
-        int target_size = size_ > 128 ? 256 : 128;
+        if (maxExternalThumbnailFileSize_ >= 0
+            && file->size() > static_cast<uint64_t>(maxExternalThumbnailFileSize_) * 1024) {
+            return result;
+        }
+        // try all available external thumbnailers for it until success
+        int target_size = size_ > 256 ? 512 : size_ > 128 ? 256 : 128;
         file->mimeType()->forEachThumbnailer([&](const std::shared_ptr<const Thumbnailer>& thumbnailer) {
             if(thumbnailer->run(uri, thumbnailFilename.toLocal8Bit().constData(), target_size)) {
                 result = QImage(thumbnailFilename);
@@ -288,9 +311,16 @@ void ThumbnailJob::setLocalFilesOnly(bool value) {
 }
 
 void ThumbnailJob::setMaxThumbnailFileSize(int size) {
-    maxThumbnailFileSize_ = size;
+    maxThumbnailFileSize_ = qMax(size, 0);
     if(fm_config) {
         fm_config->thumbnail_max = maxThumbnailFileSize_;
+    }
+}
+
+void ThumbnailJob::setMaxExternalThumbnailFileSize(int size) {
+    maxExternalThumbnailFileSize_ = size;
+    if(fm_config) {
+        fm_config->external_thumbnail_max = maxExternalThumbnailFileSize_;
     }
 }
 

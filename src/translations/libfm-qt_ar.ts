@@ -37,12 +37,12 @@
 &lt;li&gt;&lt;b&gt;%u&lt;/b&gt;: Represents a single URI of the file&lt;/li&gt;
 &lt;li&gt;&lt;b&gt;%U&lt;/b&gt;: Represents multiple URIs&lt;/li&gt;
 &lt;/ul&gt;</source>
-        <translation>&lt;b&gt;يمكن استخدام هذه العلامات الخاصّة في سطر الأوامر:&lt;/b&gt;
+        <translation>&lt;b&gt;هذه العلامات الخاصّة يمكن استخدامها في سطر الأوامر:&lt;/b&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;b&gt;%f&lt;/b&gt;: يشير إلى اسم ملف واحد&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;%F&lt;/b&gt;: يشير إلى أسماء عدّة ملفات&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;%u&lt;/b&gt;: يشير إلى مسار واحد للملف&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;%U&lt;/b&gt;: يشير إلى عدّة مسارات&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%f&lt;/b&gt;: يمثل اسم ملف واحد&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%F&lt;/b&gt;: يمثل أسماء عدّة ملفات&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%u&lt;/b&gt;: يمثل مسار واحد للملف&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;%U&lt;/b&gt;: يمثل عدّة مسارات&lt;/li&gt;
 &lt;/ul&gt;</translation>
     </message>
     <message>
@@ -53,12 +53,12 @@
     <message>
         <location filename="../app-chooser-dialog.ui" line="98"/>
         <source>Execute in terminal emulator</source>
-        <translation>نفّذ في محاكي طرفية</translation>
+        <translation>نفّذ في محاكي الطرفية</translation>
     </message>
     <message>
         <location filename="../app-chooser-dialog.ui" line="109"/>
         <source>Set selected application as default action of this file type</source>
-        <translation>اضبط التطبيق المنتقى ليكون الإجراء المبدئي لنوع الملفات هذا</translation>
+        <translation>اضبط التطبيق المنتقى ليكون الإجراء المبدئي لهذا النوع من الملفات</translation>
     </message>
 </context>
 <context>
@@ -66,7 +66,7 @@
     <message>
         <location filename="../edit-bookmarks.ui" line="14"/>
         <source>Edit Bookmarks</source>
-        <translation>حرّر العلامات</translation>
+        <translation>حرّر العلامات المرجعية</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="42"/>
@@ -81,12 +81,12 @@
     <message>
         <location filename="../edit-bookmarks.ui" line="67"/>
         <source>&amp;Add Item</source>
-        <translation>أ&amp;ضِف عنصرا</translation>
+        <translation>&amp;اضف عنصرا</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="77"/>
         <source>&amp;Remove Item</source>
-        <translation>أ&amp;زِل العنصر</translation>
+        <translation>&amp;أزِل العنصر</translation>
     </message>
     <message>
         <location filename="../edit-bookmarks.ui" line="102"/>
@@ -102,24 +102,29 @@
         <translation>نفّذ الملف</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="39"/>
+        <location filename="../exec-file.ui" line="42"/>
         <source>&amp;Open</source>
-        <translation>ا&amp;فتح</translation>
+        <translation>&amp;افتح</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="52"/>
+        <location filename="../exec-file.ui" line="55"/>
         <source>E&amp;xecute</source>
         <translation>&amp;نفّذ</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="62"/>
+        <location filename="../exec-file.ui" line="65"/>
         <source>Execute in &amp;Terminal</source>
-        <translation>نفّذ في ال&amp;طرفية</translation>
+        <translation>نفّذ في &amp;الطرفية</translation>
     </message>
     <message>
-        <location filename="../exec-file.ui" line="85"/>
+        <location filename="../exec-file.ui" line="88"/>
         <source>Cancel</source>
         <translation>ألغِ</translation>
+    </message>
+    <message>
+        <location filename="../exec-file.ui" line="102"/>
+        <source>Remember for next files of this kind</source>
+        <translation>تذكر للملفات التالية من هذا النوع</translation>
     </message>
 </context>
 <context>
@@ -127,7 +132,7 @@
     <message>
         <location filename="../filedialog.ui" line="22"/>
         <source>Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>مسار:</translation>
     </message>
     <message>
         <location filename="../filedialog.ui" line="65"/>
@@ -231,93 +236,113 @@
         <translation>آخر نفاذ:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="281"/>
+        <location filename="../file-props.ui" line="287"/>
+        <source>Created:</source>
+        <translation>صنع:</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="310"/>
         <source>Contains:</source>
         <translation>يحتوي على:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="336"/>
+        <location filename="../file-props.ui" line="330"/>
+        <source>Emblem:</source>
+        <translation>شعار:</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="342"/>
+        <source>Choose emblem</source>
+        <translation>اختر شعار</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="361"/>
+        <source>Clear emblem</source>
+        <translation>احذف الشعار</translation>
+    </message>
+    <message>
+        <location filename="../file-props.ui" line="414"/>
         <source>Device Usage:</source>
         <translation>استخدام الجهاز:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="346"/>
+        <location filename="../file-props.ui" line="424"/>
         <source>Permissions</source>
-        <translation>التصاريح</translation>
+        <translation>رخصات</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="361"/>
+        <location filename="../file-props.ui" line="439"/>
         <source>Ownership</source>
         <translation>الملكية</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="385"/>
-        <location filename="../file-props.ui" line="450"/>
-        <location filename="../file-props.ui" line="564"/>
+        <location filename="../file-props.ui" line="463"/>
+        <location filename="../file-props.ui" line="528"/>
+        <location filename="../file-props.ui" line="642"/>
         <source>Group:</source>
         <translation>المجموعة:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="398"/>
-        <location filename="../file-props.ui" line="433"/>
-        <location filename="../file-props.ui" line="512"/>
+        <location filename="../file-props.ui" line="476"/>
+        <location filename="../file-props.ui" line="511"/>
+        <location filename="../file-props.ui" line="590"/>
         <source>Owner:</source>
         <translation>المالك:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="414"/>
+        <location filename="../file-props.ui" line="492"/>
         <source>Access Control</source>
         <translation>التحكم بالنفاذ</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="467"/>
-        <location filename="../file-props.ui" line="616"/>
+        <location filename="../file-props.ui" line="545"/>
+        <location filename="../file-props.ui" line="694"/>
         <source>Other:</source>
         <translation>الغير:</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="484"/>
+        <location filename="../file-props.ui" line="562"/>
         <source>Make the file executable</source>
         <translation>اجعل الملف تنفيذيا</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="525"/>
-        <location filename="../file-props.ui" line="577"/>
-        <location filename="../file-props.ui" line="629"/>
+        <location filename="../file-props.ui" line="603"/>
+        <location filename="../file-props.ui" line="655"/>
+        <location filename="../file-props.ui" line="707"/>
         <source>Read</source>
         <translation>القراءة</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="538"/>
-        <location filename="../file-props.ui" line="590"/>
-        <location filename="../file-props.ui" line="642"/>
+        <location filename="../file-props.ui" line="616"/>
+        <location filename="../file-props.ui" line="668"/>
+        <location filename="../file-props.ui" line="720"/>
         <source>Write</source>
         <translation>الكتابة</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="551"/>
-        <location filename="../file-props.ui" line="603"/>
-        <location filename="../file-props.ui" line="655"/>
+        <location filename="../file-props.ui" line="629"/>
+        <location filename="../file-props.ui" line="681"/>
+        <location filename="../file-props.ui" line="733"/>
         <source>Execute</source>
         <translation>التنفيذ</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="664"/>
+        <location filename="../file-props.ui" line="742"/>
         <source>Sticky</source>
         <translation>ملتصق</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="671"/>
+        <location filename="../file-props.ui" line="749"/>
         <source>SetUID</source>
         <translation>ضبط معرّف المستخدم</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="678"/>
+        <location filename="../file-props.ui" line="756"/>
         <source>SetGID</source>
         <translation>ضبط معرّف المجموعة</translation>
     </message>
     <message>
-        <location filename="../file-props.ui" line="714"/>
+        <location filename="../file-props.ui" line="792"/>
         <source>Advanced Mode</source>
         <translation>الوضع المتقدم</translation>
     </message>
@@ -327,13 +352,13 @@
     <message>
         <location filename="../appchoosercombobox.cpp" line="66"/>
         <source>Customize</source>
-        <translation>خصّص</translation>
+        <translation>عدّل</translation>
     </message>
 </context>
 <context>
     <name>Fm::AppChooserDialog</name>
     <message>
-        <location filename="../appchooserdialog.cpp" line="263"/>
+        <location filename="../appchooserdialog.cpp" line="268"/>
         <source>Select an application to open &quot;%1&quot; files</source>
         <translation>اختر تطبيقا لفتح ملفات ”%1“</translation>
     </message>
@@ -377,17 +402,17 @@
 <context>
     <name>Fm::DirTreeView</name>
     <message>
-        <location filename="../dirtreeview.cpp" line="213"/>
+        <location filename="../dirtreeview.cpp" line="217"/>
         <source>Open in New T&amp;ab</source>
         <translation>افتح في ل&amp;سان جديد</translation>
     </message>
     <message>
-        <location filename="../dirtreeview.cpp" line="217"/>
+        <location filename="../dirtreeview.cpp" line="221"/>
         <source>Open in New Win&amp;dow</source>
         <translation>افتح في &amp;نافذة جديدة</translation>
     </message>
     <message>
-        <location filename="../dirtreeview.cpp" line="222"/>
+        <location filename="../dirtreeview.cpp" line="226"/>
         <source>Open in Termina&amp;l</source>
         <translation>افتح في ال&amp;طرفية</translation>
     </message>
@@ -410,9 +435,14 @@
         <translation>أنشِئ رابطا رمزيا هنا</translation>
     </message>
     <message>
-        <location filename="../dndactionmenu.cpp" line="41"/>
+        <location filename="../dndactionmenu.cpp" line="42"/>
         <source>Cancel</source>
         <translation>ألغِ</translation>
+    </message>
+    <message>
+        <location filename="../dndactionmenu.cpp" line="42"/>
+        <source>Cannot drop here</source>
+        <translation>لا يمكن أن توضع هنا</translation>
     </message>
 </context>
 <context>
@@ -448,145 +478,155 @@ What do you want to do with it?</source>
 <context>
     <name>Fm::FileDialog</name>
     <message>
-        <location filename="../filedialog.cpp" line="109"/>
+        <location filename="../filedialog.cpp" line="111"/>
         <source>Go Back</source>
         <translation>عُد</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="110"/>
+        <location filename="../filedialog.cpp" line="112"/>
         <source>Alt+Left</source>
         <comment>Go Back</comment>
         <translation>Alt+Left</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="116"/>
+        <location filename="../filedialog.cpp" line="118"/>
         <source>Go Forward</source>
         <translation>تقدّم</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="117"/>
+        <location filename="../filedialog.cpp" line="119"/>
         <source>Alt+Right</source>
         <comment>Go Forward</comment>
         <translation>Alt+Right</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="124"/>
+        <location filename="../filedialog.cpp" line="126"/>
         <source>Reload</source>
         <translation>أعِد التحميل</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="125"/>
+        <location filename="../filedialog.cpp" line="127"/>
         <source>F5</source>
         <comment>Reload</comment>
         <translation>F5</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="142"/>
+        <location filename="../filedialog.cpp" line="144"/>
         <source>Create Folder</source>
         <translation>أنشِئ مجلدا</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="152"/>
+        <location filename="../filedialog.cpp" line="160"/>
         <source>Icon View</source>
         <translation>منظور أيقوناتي</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="156"/>
+        <location filename="../filedialog.cpp" line="164"/>
         <source>Thumbnail View</source>
         <translation>منظور مصغّراتي</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="160"/>
+        <location filename="../filedialog.cpp" line="168"/>
         <source>Compact View</source>
         <translation>منظور متضام</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="164"/>
+        <location filename="../filedialog.cpp" line="172"/>
         <source>Detailed List View</source>
         <translation>منظور قائمة مفصّلة</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="172"/>
+        <location filename="../filedialog.cpp" line="180"/>
         <source>Icon Sizes</source>
-        <translation type="unfinished"></translation>
+        <translation>حجم الايقونة</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="174"/>
+        <location filename="../filedialog.cpp" line="182"/>
         <source>Size of big icons:</source>
-        <translation type="unfinished"></translation>
+        <translation>حجم الايقونة الكبيرة:</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="181"/>
+        <location filename="../filedialog.cpp" line="189"/>
         <source>Size of small icons:</source>
-        <translation type="unfinished"></translation>
+        <translation>حجم الأيقونات الصغيرة:</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="188"/>
+        <location filename="../filedialog.cpp" line="196"/>
         <source>Size of thumbnails:</source>
-        <translation type="unfinished"></translation>
+        <translation>حجم الصور المصغرة:</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="204"/>
+        <location filename="../filedialog.cpp" line="212"/>
+        <source>Show Hidden</source>
+        <translation>أظهر المخفي</translation>
+    </message>
+    <message>
+        <location filename="../filedialog.cpp" line="224"/>
         <source>Show Thumbnails</source>
-        <translation type="unfinished"></translation>
+        <translation>إظهار الصور المصغرة</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="209"/>
+        <location filename="../filedialog.cpp" line="229"/>
         <source>Show File Tooltips</source>
-        <translation type="unfinished"></translation>
+        <translation>إظهار تلميحات الملف</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="220"/>
+        <location filename="../filedialog.cpp" line="236"/>
+        <source>Smooth Scrolling</source>
+        <translation>التمرير السلس</translation>
+    </message>
+    <message>
+        <location filename="../filedialog.cpp" line="251"/>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>خيارات</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="540"/>
-        <location filename="../filedialog.cpp" line="935"/>
+        <location filename="../filedialog.cpp" line="601"/>
+        <location filename="../filedialog.cpp" line="1060"/>
         <source>Error</source>
         <translation>خطأ</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="540"/>
+        <location filename="../filedialog.cpp" line="601"/>
         <source>Please select a file</source>
         <translation>رجاءً اختر ملفا</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="582"/>
+        <location filename="../filedialog.cpp" line="677"/>
         <source>%1 already exists.
 Do you want to replace it?</source>
         <translation>‏⁨%1⁩ موجود بالفعل.
 أتريد استبداله؟</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="905"/>
+        <location filename="../filedialog.cpp" line="1022"/>
         <source>Path &quot;%1&quot; does not exist</source>
         <translation>المسار ”%1“ غير موجود</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="919"/>
+        <location filename="../filedialog.cpp" line="1036"/>
         <source>&quot;%1&quot; is not a directory</source>
         <translation>‏”⁨%1⁩“ ليس دليلا</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="925"/>
+        <location filename="../filedialog.cpp" line="1046"/>
         <source>&quot;%1&quot; is not a file</source>
         <translation>‏”⁨%1⁩“ ليس ملفا</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="1077"/>
-        <location filename="../filedialog.cpp" line="1185"/>
+        <location filename="../filedialog.cpp" line="1200"/>
+        <location filename="../filedialog.cpp" line="1317"/>
         <source>&amp;Open</source>
         <translation>ا&amp;فتح</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="1080"/>
-        <location filename="../filedialog.cpp" line="1193"/>
+        <location filename="../filedialog.cpp" line="1203"/>
+        <location filename="../filedialog.cpp" line="1325"/>
         <source>&amp;Save</source>
         <translation>ا&amp;حفظ</translation>
     </message>
     <message>
-        <location filename="../filedialog.cpp" line="1087"/>
+        <location filename="../filedialog.cpp" line="1210"/>
         <source>All Files (*)</source>
         <translation>كل الملفات (*)</translation>
     </message>
@@ -594,12 +634,12 @@ Do you want to replace it?</source>
 <context>
     <name>Fm::FileDialogHelper</name>
     <message>
-        <location filename="../filedialoghelper.cpp" line="139"/>
+        <location filename="../filedialoghelper.cpp" line="138"/>
         <source>Open File</source>
         <translation>افتح الملف</translation>
     </message>
     <message>
-        <location filename="../filedialoghelper.cpp" line="140"/>
+        <location filename="../filedialoghelper.cpp" line="139"/>
         <source>Save File</source>
         <translation>حفظ الملف</translation>
     </message>
@@ -609,99 +649,132 @@ Do you want to replace it?</source>
     <message>
         <location filename="../filedialog_p.h" line="40"/>
         <source> px</source>
-        <translation type="unfinished"></translation>
+        <translation> بكسل</translation>
     </message>
 </context>
 <context>
     <name>Fm::FileMenu</name>
     <message>
-        <location filename="../filemenu.cpp" line="84"/>
+        <location filename="../filemenu.cpp" line="86"/>
         <source>Open</source>
         <translation>افتح</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="147"/>
+        <location filename="../filemenu.cpp" line="356"/>
+        <source>Many files</source>
+        <translation>العديد من الملفات</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../filemenu.cpp" line="357"/>
+        <source>Do you want to open these %1 files?</source>
+        <translation>
+            <numerusform>%1؟</numerusform>
+            <numerusform>هل تريد فتح هذا الملف%1؟</numerusform>
+            <numerusform>هل تريد فتح هذين الملفين%1؟</numerusform>
+            <numerusform>هل تريد فتح هذه الـ%1 ملفات؟</numerusform>
+            <numerusform>هل تريد فتح هذه الـ%1 ملفات؟</numerusform>
+            <numerusform>هل تريد فتح هذه الـ%1 ملفات؟</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="154"/>
         <source>Cut</source>
         <translation>قصّ</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="151"/>
+        <location filename="../filemenu.cpp" line="158"/>
         <source>Copy</source>
         <translation>انسخ</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="155"/>
+        <location filename="../filemenu.cpp" line="162"/>
         <source>Paste</source>
         <translation>ألصِق</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="159"/>
-        <location filename="../filemenu.cpp" line="407"/>
+        <location filename="../filemenu.cpp" line="166"/>
+        <location filename="../filemenu.cpp" line="484"/>
         <source>&amp;Move to Trash</source>
         <translation>ا&amp;نقل إلى المهملات</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="253"/>
+        <location filename="../filemenu.cpp" line="226"/>
+        <source>Mount</source>
+        <translation>ضُمّ</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="240"/>
+        <source>Unmount</source>
+        <translation>ألغِ الضمّ</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="254"/>
+        <source>Eject</source>
+        <translation>أخرِج</translation>
+    </message>
+    <message>
+        <location filename="../filemenu.cpp" line="313"/>
         <source>Trust selected executables</source>
         <translation>الوثوق بالملفات التنفيذية المحددة</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="254"/>
+        <location filename="../filemenu.cpp" line="314"/>
         <source>Trust this executable</source>
         <translation>الوثوق بهذا الملف التنفيذي المحدد</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="342"/>
+        <location filename="../filemenu.cpp" line="419"/>
         <source>Output</source>
         <translation>الخرج</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="407"/>
+        <location filename="../filemenu.cpp" line="148"/>
+        <location filename="../filemenu.cpp" line="484"/>
         <source>&amp;Delete</source>
         <translation>ا&amp;حذف</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="163"/>
+        <location filename="../filemenu.cpp" line="170"/>
         <source>Rename</source>
         <translation>غيّر الاسم</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="88"/>
+        <location filename="../filemenu.cpp" line="90"/>
         <source>Open With...</source>
         <translation>افتح في…</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="116"/>
+        <location filename="../filemenu.cpp" line="118"/>
         <source>Other Applications</source>
         <translation>تطبيق آخر</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="122"/>
+        <location filename="../filemenu.cpp" line="125"/>
         <source>Create &amp;New</source>
         <translation>أنشِئ &amp;جديدا</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="141"/>
+        <location filename="../filemenu.cpp" line="144"/>
         <source>&amp;Restore</source>
         <translation>ا&amp;ستعد</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="218"/>
+        <location filename="../filemenu.cpp" line="275"/>
         <source>Extract to...</source>
         <translation>استخرج إلى…</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="226"/>
+        <location filename="../filemenu.cpp" line="283"/>
         <source>Extract Here</source>
         <translation>استخرج هنا</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="233"/>
+        <location filename="../filemenu.cpp" line="290"/>
         <source>Compress</source>
         <translation>اضغط</translation>
     </message>
     <message>
-        <location filename="../filemenu.cpp" line="242"/>
+        <location filename="../filemenu.cpp" line="299"/>
         <source>Properties</source>
         <translation>خصائص</translation>
     </message>
@@ -709,32 +782,46 @@ Do you want to replace it?</source>
 <context>
     <name>Fm::FileOperation</name>
     <message>
-        <location filename="../fileoperation.cpp" line="312"/>
+        <location filename="../fileoperation.cpp" line="317"/>
         <source>Error</source>
         <translation>خطأ</translation>
     </message>
     <message>
-        <location filename="../fileoperation.cpp" line="313"/>
+        <location filename="../fileoperation.cpp" line="318"/>
         <source>Some files cannot be moved to trash can because the underlying file systems don&apos;t support this operation.
 Do you want to delete them instead?</source>
         <translation>تعذر نقل بعض الملفات إلى المهملات لأن أنظمة الملفات التحتية لا تدعم ذلك.
 أتريد حذفها بدل نقلها؟</translation>
     </message>
     <message>
-        <location filename="../fileoperation.cpp" line="399"/>
-        <location filename="../fileoperation.cpp" line="417"/>
+        <location filename="../fileoperation.cpp" line="404"/>
+        <location filename="../fileoperation.cpp" line="422"/>
         <source>Confirm</source>
         <translation>تأكيد</translation>
     </message>
-    <message>
-        <location filename="../fileoperation.cpp" line="400"/>
-        <source>Do you want to delete the selected files?</source>
-        <translation>أتريد حذف الملفات المحددة؟</translation>
+    <message numerus="yes">
+        <location filename="../fileoperation.cpp" line="405"/>
+        <source>Do you want to delete the selected file(s)?</source>
+        <translation>
+            <numerusform>؟</numerusform>
+            <numerusform>هل تريد حذف الملف المحدد؟</numerusform>
+            <numerusform>هل تريد حذف الملفات المحددة؟</numerusform>
+            <numerusform>هل تريد حذف الملفات المحددة؟</numerusform>
+            <numerusform>هل تريد حذف الملفات المحددة؟</numerusform>
+            <numerusform>هل تريد حذف الملفات المحددة؟</numerusform>
+        </translation>
     </message>
-    <message>
-        <location filename="../fileoperation.cpp" line="418"/>
-        <source>Do you want to move the selected files to trash can?</source>
-        <translation>أتريد نقل الملفات المحددة إلى سلة المهملات؟</translation>
+    <message numerus="yes">
+        <location filename="../fileoperation.cpp" line="423"/>
+        <source>Do you want to move the selected file(s) to trash can?</source>
+        <translation>
+            <numerusform>؟</numerusform>
+            <numerusform>هل تريد نقل الملف المحدد إلى سلة المهملات؟</numerusform>
+            <numerusform>هل تريد نقل الملفات المحددة إلى سلة المهملات؟</numerusform>
+            <numerusform>هل تريد نقل الملفات المحددة إلى سلة المهملات؟</numerusform>
+            <numerusform>هل تريد نقل الملفات المحددة إلى سلة المهملات؟</numerusform>
+            <numerusform>هل تريد نقل الملفات المحددة إلى سلة المهملات؟</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -810,8 +897,8 @@ Do you want to delete them instead?</source>
         <translation>يستعيد الملفات الآتية من سلة المهملات:</translation>
     </message>
     <message>
-        <location filename="../fileoperationdialog.cpp" line="146"/>
-        <location filename="../fileoperationdialog.cpp" line="152"/>
+        <location filename="../fileoperationdialog.cpp" line="149"/>
+        <location filename="../fileoperationdialog.cpp" line="155"/>
         <source>Error</source>
         <translation>خطأ</translation>
     </message>
@@ -819,62 +906,69 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::FilePropsDialog</name>
     <message>
-        <location filename="../filepropsdialog.cpp" line="162"/>
+        <location filename="../filepropsdialog.cpp" line="164"/>
         <source>View folder content</source>
         <translation>عرض محتوى المجلد</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="163"/>
+        <location filename="../filepropsdialog.cpp" line="165"/>
         <source>View and modify folder content</source>
         <translation>عرض محتوى المجلد وتعديله</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="167"/>
+        <location filename="../filepropsdialog.cpp" line="169"/>
         <source>Read</source>
         <translation>القراءة</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="168"/>
+        <location filename="../filepropsdialog.cpp" line="170"/>
         <source>Read and write</source>
         <translation>القراءة والكتابة</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="170"/>
+        <location filename="../filepropsdialog.cpp" line="172"/>
         <source>Forbidden</source>
         <translation>ممنوع</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="287"/>
+        <location filename="../filepropsdialog.cpp" line="289"/>
         <source>Files of different types</source>
         <translation>ملفات أنواعها مختلفة</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="310"/>
+        <location filename="../filepropsdialog.cpp" line="312"/>
+        <location filename="../filepropsdialog.cpp" line="319"/>
+        <location filename="../filepropsdialog.cpp" line="326"/>
+        <source>N/A</source>
+        <translation>لايوجد</translation>
+    </message>
+    <message>
+        <location filename="../filepropsdialog.cpp" line="330"/>
         <source>Multiple Files</source>
         <translation>عدد من الملفات</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="336"/>
+        <location filename="../filepropsdialog.cpp" line="407"/>
         <source>%p% used</source>
         <translation>%p% مستخدم</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="337"/>
+        <location filename="../filepropsdialog.cpp" line="408"/>
         <source>%1 Free of %2</source>
         <translation>%1% متاح من %2</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="382"/>
+        <location filename="../filepropsdialog.cpp" line="454"/>
         <source>no file</source>
         <translation>لا ملف</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="384"/>
+        <location filename="../filepropsdialog.cpp" line="456"/>
         <source>one file</source>
         <translation>ملف واحد</translation>
     </message>
     <message numerus="yes">
-        <location filename="../filepropsdialog.cpp" line="386"/>
+        <location filename="../filepropsdialog.cpp" line="458"/>
         <source>%Ln files</source>
         <translation>
             <numerusform>لا ملفات</numerusform>
@@ -886,22 +980,24 @@ Do you want to delete them instead?</source>
         </translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="420"/>
+        <location filename="../filepropsdialog.cpp" line="492"/>
+        <location filename="../filepropsdialog.cpp" line="537"/>
         <source>Select an icon</source>
         <translation>اختر أيقونة</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="422"/>
+        <location filename="../filepropsdialog.cpp" line="494"/>
+        <location filename="../filepropsdialog.cpp" line="539"/>
         <source>Images (*.png *.xpm *.svg *.svgz )</source>
         <translation>الصور (*.png *.xpm *.svg *.svgz )</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="518"/>
+        <location filename="../filepropsdialog.cpp" line="645"/>
         <source>Apply changes</source>
         <translation>تطبيق التعديلات</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="519"/>
+        <location filename="../filepropsdialog.cpp" line="646"/>
         <source>Do you want to recursively apply these changes to all files and sub-folders?</source>
         <translation>أتريد تطبيق هذه التعديلات تكراريا لكل الملفات والمجلدات الفرعية؟</translation>
     </message>
@@ -909,17 +1005,17 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::FileSearchDialog</name>
     <message>
-        <location filename="../filesearchdialog.cpp" line="128"/>
+        <location filename="../filesearchdialog.cpp" line="157"/>
         <source>Error</source>
         <translation>خطأ</translation>
     </message>
     <message>
-        <location filename="../filesearchdialog.cpp" line="128"/>
+        <location filename="../filesearchdialog.cpp" line="157"/>
         <source>You should add at least one directory to search.</source>
         <translation>عليك إضافة دليل واحد على الأقل للبحث فيه.</translation>
     </message>
     <message>
-        <location filename="../filesearchdialog.cpp" line="135"/>
+        <location filename="../filesearchdialog.cpp" line="164"/>
         <source>Select a folder</source>
         <translation>اختر مجلدا</translation>
     </message>
@@ -927,12 +1023,12 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::FileTransferJob</name>
     <message>
-        <location filename="../core/filetransferjob.cpp" line="471"/>
+        <location filename="../core/filetransferjob.cpp" line="486"/>
         <source>Cannot copy a directory into itself!</source>
         <translation>لا يمكنك نسخ الدليل في نفسه!</translation>
     </message>
     <message>
-        <location filename="../core/filetransferjob.cpp" line="522"/>
+        <location filename="../core/filetransferjob.cpp" line="537"/>
         <source>Cannot create a link on non-native filesystem</source>
         <translation>لا يمكن إنشاء رابط في نظام ملفات غير أصيل</translation>
     </message>
@@ -940,102 +1036,107 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::FolderMenu</name>
     <message>
-        <location filename="../foldermenu.cpp" line="41"/>
+        <location filename="../foldermenu.cpp" line="58"/>
+        <source>Empty Trash</source>
+        <translation>أفرِغ المهملات</translation>
+    </message>
+    <message>
+        <location filename="../foldermenu.cpp" line="70"/>
         <source>Create &amp;New</source>
         <translation>أنشِئ &amp;جديدا</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="48"/>
+        <location filename="../foldermenu.cpp" line="75"/>
         <source>&amp;Paste</source>
         <translation>أل&amp;صِق</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="54"/>
+        <location filename="../foldermenu.cpp" line="89"/>
         <source>Select &amp;All</source>
         <translation>حدّد ال&amp;كل</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="58"/>
-        <source>Invert Selection</source>
-        <translation>اعكس التحديد</translation>
-    </message>
-    <message>
-        <location filename="../foldermenu.cpp" line="64"/>
+        <location filename="../foldermenu.cpp" line="100"/>
         <source>Sorting</source>
         <translation>الفرز</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="69"/>
+        <location filename="../foldermenu.cpp" line="105"/>
         <source>Show Hidden</source>
         <translation>اعرض المخفي</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="98"/>
+        <location filename="../foldermenu.cpp" line="140"/>
         <source>Folder Pr&amp;operties</source>
         <translation>&amp;خصائص المجلد</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="141"/>
+        <location filename="../foldermenu.cpp" line="183"/>
         <source>Output</source>
         <translation>الخرج</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="163"/>
+        <location filename="../foldermenu.cpp" line="205"/>
         <source>By File Name</source>
         <translation>باسم الملف</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="164"/>
+        <location filename="../foldermenu.cpp" line="206"/>
         <source>By Modification Time</source>
         <translation>بوقت التعديل</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="167"/>
+        <location filename="../foldermenu.cpp" line="207"/>
+        <source>By Creation Time</source>
+        <translation>حسب وقت ألإنشاء</translation>
+    </message>
+    <message>
+        <location filename="../foldermenu.cpp" line="210"/>
         <source>By Deletion Time</source>
         <translation>بوقت الحذف</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="170"/>
+        <location filename="../foldermenu.cpp" line="213"/>
         <source>By File Size</source>
         <translation>بحجم الملف</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="171"/>
+        <location filename="../foldermenu.cpp" line="214"/>
         <source>By File Type</source>
         <translation>بنوع الملف</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="172"/>
+        <location filename="../foldermenu.cpp" line="215"/>
         <source>By File Owner</source>
         <translation>بمالك الملف</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="173"/>
+        <location filename="../foldermenu.cpp" line="216"/>
         <source>By File Group</source>
         <translation>بمجموعة الملف</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="179"/>
+        <location filename="../foldermenu.cpp" line="222"/>
         <source>Ascending</source>
         <translation>تصاعديا</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="184"/>
+        <location filename="../foldermenu.cpp" line="227"/>
         <source>Descending</source>
         <translation>تنازليا</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="201"/>
+        <location filename="../foldermenu.cpp" line="244"/>
         <source>Folder First</source>
         <translation>المجلدات أولا</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="209"/>
+        <location filename="../foldermenu.cpp" line="252"/>
         <source>Hidden Last</source>
-        <translation type="unfinished"></translation>
+        <translation>الأخير المخفي</translation>
     </message>
     <message>
-        <location filename="../foldermenu.cpp" line="217"/>
+        <location filename="../foldermenu.cpp" line="260"/>
         <source>Case Sensitive</source>
         <translation>حساس للحالة</translation>
     </message>
@@ -1043,72 +1144,87 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::FolderModel</name>
     <message>
-        <location filename="../foldermodel.cpp" line="303"/>
+        <location filename="../foldermodel.cpp" line="306"/>
         <source>Location:</source>
         <translation>المكان:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="306"/>
+        <location filename="../foldermodel.cpp" line="310"/>
         <source>File type:</source>
         <translation>نوع الملف:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="310"/>
+        <location filename="../foldermodel.cpp" line="315"/>
         <source>File size:</source>
         <translation>حجم الملف:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="314"/>
+        <location filename="../foldermodel.cpp" line="319"/>
         <source>Last modified:</source>
         <translation>آخر تعديل:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="315"/>
+        <location filename="../foldermodel.cpp" line="320"/>
         <source>Last accessed:</source>
         <translation>آخر نفاذ:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="319"/>
+        <location filename="../foldermodel.cpp" line="321"/>
+        <source>N/A</source>
+        <translation>لا يوجد</translation>
+    </message>
+    <message>
+        <location filename="../foldermodel.cpp" line="323"/>
+        <source>Created:</source>
+        <translation>أنشئ:</translation>
+    </message>
+    <message>
+        <location filename="../foldermodel.cpp" line="328"/>
         <source>Owner:</source>
         <translation>المالك:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="320"/>
+        <location filename="../foldermodel.cpp" line="329"/>
         <source>Group:</source>
         <translation>المجموعة:</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="384"/>
+        <location filename="../foldermodel.cpp" line="396"/>
         <source>Name</source>
         <translation>الاسم</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="387"/>
+        <location filename="../foldermodel.cpp" line="399"/>
         <source>Type</source>
         <translation>النوع</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="390"/>
+        <location filename="../foldermodel.cpp" line="402"/>
         <source>Size</source>
         <translation>الحجم</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="393"/>
+        <location filename="../foldermodel.cpp" line="405"/>
         <source>Modified</source>
         <translation>التعديل</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="396"/>
+        <location filename="../foldermodel.cpp" line="408"/>
+        <source>Created</source>
+        <translation>أنشئ</translation>
+    </message>
+    <message>
+        <location filename="../foldermodel.cpp" line="411"/>
         <source>Deleted</source>
         <translation>الحذف</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="399"/>
+        <location filename="../foldermodel.cpp" line="414"/>
         <source>Owner</source>
         <translation>المالك</translation>
     </message>
     <message>
-        <location filename="../foldermodel.cpp" line="402"/>
+        <location filename="../foldermodel.cpp" line="417"/>
         <source>Group</source>
         <translation>المجموعة</translation>
     </message>
@@ -1116,12 +1232,12 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::FolderViewTreeView</name>
     <message>
-        <location filename="../folderview.cpp" line="373"/>
+        <location filename="../folderview.cpp" line="409"/>
         <source>Auto-resize columns</source>
         <translation>غيّر مقاس الأعمدة تلقائيًا</translation>
     </message>
     <message>
-        <location filename="../folderview.cpp" line="390"/>
+        <location filename="../folderview.cpp" line="426"/>
         <source>Visible Columns</source>
         <translation>الأعمدة الظاهرة</translation>
     </message>
@@ -1142,7 +1258,7 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::MountOperationPasswordDialog</name>
     <message>
-        <location filename="../mountoperationpassworddialog.cpp" line="40"/>
+        <location filename="../mountoperationpassworddialog.cpp" line="42"/>
         <source>&amp;Connect</source>
         <translation>اتّ&amp;صل</translation>
     </message>
@@ -1150,12 +1266,12 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::PathBar</name>
     <message>
-        <location filename="../pathbar.cpp" line="130"/>
+        <location filename="../pathbar.cpp" line="122"/>
         <source>&amp;Edit Path</source>
         <translation>&amp;حرّر المسار</translation>
     </message>
     <message>
-        <location filename="../pathbar.cpp" line="133"/>
+        <location filename="../pathbar.cpp" line="125"/>
         <source>&amp;Copy Path</source>
         <translation>ا&amp;نسخ المسار</translation>
     </message>
@@ -1163,12 +1279,12 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::PlacesModel</name>
     <message>
-        <location filename="../placesmodel.cpp" line="47"/>
+        <location filename="../placesmodel.cpp" line="46"/>
         <source>Places</source>
         <translation>الأماكن</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="55"/>
+        <location filename="../placesmodel.cpp" line="54"/>
         <source>Desktop</source>
         <translation>سطح المكتب</translation>
     </message>
@@ -1178,22 +1294,22 @@ Do you want to delete them instead?</source>
         <translation>المهملات</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="61"/>
+        <location filename="../placesmodel.cpp" line="60"/>
         <source>Computer</source>
         <translation>الحاسوب</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="69"/>
+        <location filename="../placesmodel.cpp" line="68"/>
         <source>Applications</source>
         <translation>التطبيقات</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="78"/>
+        <location filename="../placesmodel.cpp" line="77"/>
         <source>Network</source>
         <translation>الشبكة</translation>
     </message>
     <message>
-        <location filename="../placesmodel.cpp" line="82"/>
+        <location filename="../placesmodel.cpp" line="81"/>
         <source>Devices</source>
         <translation>الأجهزة</translation>
     </message>
@@ -1206,64 +1322,64 @@ Do you want to delete them instead?</source>
 <context>
     <name>Fm::PlacesView</name>
     <message>
-        <location filename="../placesview.cpp" line="496"/>
+        <location filename="../placesview.cpp" line="572"/>
         <source>Empty Trash</source>
         <translation>أفرِغ المهملات</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="481"/>
+        <location filename="../placesview.cpp" line="555"/>
         <source>Open in New Tab</source>
         <translation>افتح في لسان جديد</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="484"/>
+        <location filename="../placesview.cpp" line="559"/>
         <source>Open in New Window</source>
         <translation>افتح في نافذة جديدة</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="516"/>
-        <location filename="../placesview.cpp" line="573"/>
+        <location filename="../placesview.cpp" line="592"/>
+        <location filename="../placesview.cpp" line="654"/>
         <source>Hide</source>
         <translation>أخفِ</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="533"/>
+        <location filename="../placesview.cpp" line="609"/>
         <source>Move Bookmark Up</source>
         <translation>انقل العلامة لأعلى</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="538"/>
+        <location filename="../placesview.cpp" line="616"/>
         <source>Move Bookmark Down</source>
         <translation>انقل العلامة لأسفل</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="542"/>
+        <location filename="../placesview.cpp" line="621"/>
         <source>Rename Bookmark</source>
         <translation>غيّر اسم العلامة</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="545"/>
+        <location filename="../placesview.cpp" line="625"/>
         <source>Remove Bookmark</source>
         <translation>أزِل العلامة</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="554"/>
-        <location filename="../placesview.cpp" line="587"/>
+        <location filename="../placesview.cpp" line="635"/>
+        <location filename="../placesview.cpp" line="668"/>
         <source>Unmount</source>
         <translation>ألغِ الضمّ</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="558"/>
+        <location filename="../placesview.cpp" line="639"/>
         <source>Mount</source>
         <translation>ضُمّ</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="564"/>
+        <location filename="../placesview.cpp" line="645"/>
         <source>Eject</source>
         <translation>أخرِج</translation>
     </message>
     <message>
-        <location filename="../placesview.cpp" line="599"/>
+        <location filename="../placesview.cpp" line="680"/>
         <source>Show All Entries</source>
         <translation>اعرض كل المدخلات</translation>
     </message>
@@ -1289,25 +1405,30 @@ Modified: %2</source>
 التعديل: %2</translation>
     </message>
     <message>
-        <location filename="../renamedialog.cpp" line="96"/>
+        <location filename="../renamedialog.cpp" line="104"/>
         <source>&amp;Overwrite</source>
         <translation>ا&amp;كتب فوقه</translation>
     </message>
     <message>
-        <location filename="../renamedialog.cpp" line="98"/>
+        <location filename="../renamedialog.cpp" line="106"/>
         <source>&amp;Rename</source>
         <translation>&amp;غيّر اسمه</translation>
+    </message>
+    <message>
+        <location filename="../renamedialog.cpp" line="116"/>
+        <source>&lt;p&gt;&lt;b&gt;The file cannot overwrite itself.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Please select another name.&lt;/p&gt;</source>
+        <translation>&lt;p&gt; &lt;b&gt; لا يمكن للملف الكتابة فوق نفسه. &lt;/b&gt; &lt;/p&gt; &lt;p&gt; الرجاء تحديد اسم آخر. &lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>Fm::SidePane</name>
     <message>
-        <location filename="../sidepane.cpp" line="45"/>
+        <location filename="../sidepane.cpp" line="46"/>
         <source>Lists</source>
-        <translation type="unfinished"></translation>
+        <translation>القوائم</translation>
     </message>
     <message>
-        <location filename="../sidepane.cpp" line="46"/>
+        <location filename="../sidepane.cpp" line="47"/>
         <source>Directory Tree</source>
         <translation>شجرة الأدلة</translation>
     </message>
@@ -1359,11 +1480,16 @@ Modified: %2</source>
     </message>
     <message>
         <location filename="../mount-operation-password.ui" line="137"/>
-        <source>Remember password for &amp;this session</source>
-        <translation type="unfinished"></translation>
+        <source>Session length is determined by password manager</source>
+        <translation>يتم تحديد طول الجلسة بواسطة مدير كلمات المرور</translation>
     </message>
     <message>
-        <location filename="../mount-operation-password.ui" line="147"/>
+        <location filename="../mount-operation-password.ui" line="140"/>
+        <source>Remember password for &amp;this session</source>
+        <translation>تذكر كلمة المرور لهذه الجلسة</translation>
+    </message>
+    <message>
+        <location filename="../mount-operation-password.ui" line="150"/>
         <source>Remember &amp;forever</source>
         <translation>تذكّر للأب&amp;د</translation>
     </message>
@@ -1371,61 +1497,61 @@ Modified: %2</source>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../filelauncher.cpp" line="104"/>
-        <location filename="../filepropsdialog.cpp" line="543"/>
-        <location filename="../mountoperation.cpp" line="207"/>
-        <location filename="../utilities.cpp" line="147"/>
-        <location filename="../utilities.cpp" line="283"/>
+        <location filename="../filelauncher.cpp" line="124"/>
+        <location filename="../filepropsdialog.cpp" line="671"/>
+        <location filename="../mountoperation.cpp" line="297"/>
+        <location filename="../utilities.cpp" line="154"/>
+        <location filename="../utilities.cpp" line="318"/>
         <source>Error</source>
         <translation>خطأ</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="163"/>
+        <location filename="../utilities.cpp" line="170"/>
         <source>Rename File</source>
         <translation>تغيير اسم الملف</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="164"/>
+        <location filename="../utilities.cpp" line="171"/>
         <source>Please enter a new name:</source>
         <translation>رجاءً أدخِل الاسم الجديد:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="223"/>
+        <location filename="../utilities.cpp" line="230"/>
         <source>Create Folder</source>
         <translation>إنشاء مجلد</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="228"/>
+        <location filename="../utilities.cpp" line="235"/>
         <source>Please enter a new file name:</source>
         <translation>رجاءً أدخِل اسم الملف الجديد:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="229"/>
-        <source>New text file</source>
-        <translation>ملف نصي جديد</translation>
+        <location filename="../utilities.cpp" line="236"/>
+        <source>New file</source>
+        <translation>ملف جديد</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="233"/>
+        <location filename="../utilities.cpp" line="240"/>
         <source>Please enter a new folder name:</source>
         <translation>رجاءً أدخِل اسم المجلد الجديد:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="234"/>
+        <location filename="../utilities.cpp" line="241"/>
         <source>New folder</source>
         <translation>مجلد جديد</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="239"/>
+        <location filename="../utilities.cpp" line="246"/>
         <source>Enter a name for the new %1:</source>
         <translation>رجاءً أدخِل اسما لِ‍ ”%1“ الجديد:</translation>
     </message>
     <message>
-        <location filename="../utilities.cpp" line="224"/>
+        <location filename="../utilities.cpp" line="231"/>
         <source>Create File</source>
         <translation>إنشاء ملف</translation>
     </message>
     <message>
-        <location filename="../filepropsdialog.cpp" line="560"/>
+        <location filename="../filepropsdialog.cpp" line="689"/>
         <source>Custom Icon Error</source>
         <translation>خطأ في الأيقونة المخصصة</translation>
     </message>
@@ -1435,24 +1561,30 @@ Modified: %2</source>
         <translation>المسار ليس مضموما.</translation>
     </message>
     <message>
-        <location filename="../core/basicfilelauncher.cpp" line="289"/>
+        <location filename="../core/basicfilelauncher.cpp" line="319"/>
         <source>Invalid desktop entry file: &apos;%1&apos;</source>
         <translation>ملف مدخلة سطح المكتب غير صالح: ”%1“</translation>
     </message>
     <message>
-        <location filename="../core/basicfilelauncher.cpp" line="325"/>
+        <location filename="../core/basicfilelauncher.cpp" line="355"/>
         <source>No default application is set to launch &apos;%1&apos;</source>
         <translation>لم يُضبط أي تطبيق مبدئي ليُطلق ”%1“</translation>
     </message>
     <message>
-        <location filename="../core/basicfilelauncher.cpp" line="366"/>
+        <location filename="../core/basicfilelauncher.cpp" line="396"/>
         <source>Cannot set working directory to &apos;%1&apos;: %2</source>
         <translation>تعذر ضبط دليل العمل ليكون ”%1“: ‏”%2“</translation>
     </message>
     <message>
-        <location filename="../placesmodelitem.cpp" line="123"/>
+        <location filename="../placesmodelitem.cpp" line="127"/>
         <source>Identifier: </source>
         <translation>معرف: </translation>
+    </message>
+    <message>
+        <location filename="../foldermodelitem.cpp" line="61"/>
+        <location filename="../foldermodelitem.cpp" line="74"/>
+        <source>N/A</source>
+        <translation>لا يوجد</translation>
     </message>
 </context>
 <context>
@@ -1501,161 +1633,161 @@ Modified: %2</source>
         <translation>أنماط لأسماء الملفات:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="41"/>
+        <location filename="../filesearch.ui" line="44"/>
         <source>*</source>
         <translation>*</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="55"/>
+        <location filename="../filesearch.ui" line="58"/>
         <source>Use regular expression</source>
         <translation>استخدم التعابير النمطية</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="68"/>
+        <location filename="../filesearch.ui" line="71"/>
         <source>Places to Search:</source>
         <translation>أماكن البحث:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="81"/>
+        <location filename="../filesearch.ui" line="84"/>
         <source>&amp;Add</source>
         <translation>أ&amp;ضِف</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="93"/>
+        <location filename="../filesearch.ui" line="96"/>
         <source>&amp;Remove</source>
         <translation>أ&amp;زِل</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="129"/>
+        <location filename="../filesearch.ui" line="132"/>
         <source>Search for hidden files</source>
         <translation>ابحث عن الملفات المخفية</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="140"/>
+        <location filename="../filesearch.ui" line="143"/>
         <source>File Type</source>
         <translation>نوع الملف</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="146"/>
+        <location filename="../filesearch.ui" line="149"/>
         <source>Only search for files of following types:</source>
         <translation>ابحث عن الملفات بالأنواع الآتية فقط:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="152"/>
+        <location filename="../filesearch.ui" line="155"/>
         <source>Text files</source>
         <translation>الملفات النصية</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="159"/>
+        <location filename="../filesearch.ui" line="162"/>
         <source>Image files</source>
         <translation>ملفات الصور</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="166"/>
+        <location filename="../filesearch.ui" line="169"/>
         <source>Audio files</source>
         <translation>ملفات الصوت</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="173"/>
+        <location filename="../filesearch.ui" line="176"/>
         <source>Video files</source>
         <translation>ملفات الڤديو</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="180"/>
+        <location filename="../filesearch.ui" line="183"/>
         <source>Documents</source>
         <translation>المستندات</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="187"/>
+        <location filename="../filesearch.ui" line="190"/>
         <source>Folders</source>
         <translation>المجلدات</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="211"/>
+        <location filename="../filesearch.ui" line="214"/>
         <source>Content</source>
         <translation>المحتوى</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="217"/>
+        <location filename="../filesearch.ui" line="220"/>
         <source>File contains:</source>
         <translation>في داخل الملف:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="233"/>
+        <location filename="../filesearch.ui" line="240"/>
         <source>&amp;Use regular expression</source>
         <translation>ا&amp;ستخدم التعابير النمطية</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="260"/>
+        <location filename="../filesearch.ui" line="267"/>
         <source>Properties</source>
         <translation>الخصائص</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="266"/>
+        <location filename="../filesearch.ui" line="273"/>
         <source>File Size:</source>
         <translation>حجم الملف:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="295"/>
+        <location filename="../filesearch.ui" line="302"/>
         <source>Larger than:</source>
         <translation>أكبر من:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="309"/>
-        <location filename="../filesearch.ui" line="339"/>
+        <location filename="../filesearch.ui" line="316"/>
+        <location filename="../filesearch.ui" line="346"/>
         <source>Bytes</source>
         <translation>بايت</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="314"/>
-        <location filename="../filesearch.ui" line="344"/>
+        <location filename="../filesearch.ui" line="321"/>
+        <location filename="../filesearch.ui" line="351"/>
         <source>KiB</source>
         <translation>ك.بايت</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="319"/>
-        <location filename="../filesearch.ui" line="349"/>
+        <location filename="../filesearch.ui" line="326"/>
+        <location filename="../filesearch.ui" line="356"/>
         <source>MiB</source>
         <translation>م.بايت</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="324"/>
-        <location filename="../filesearch.ui" line="354"/>
+        <location filename="../filesearch.ui" line="331"/>
+        <location filename="../filesearch.ui" line="361"/>
         <source>GiB</source>
         <translation>غ.بايت</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="274"/>
+        <location filename="../filesearch.ui" line="281"/>
         <source>Smaller than:</source>
         <translation>أصغر من:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="48"/>
+        <location filename="../filesearch.ui" line="51"/>
         <source>Case sensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>حساس للشكل</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="122"/>
+        <location filename="../filesearch.ui" line="125"/>
         <source>Search in subdirectories</source>
         <translation>ابحث في الأدلة الفرعية</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="226"/>
+        <location filename="../filesearch.ui" line="233"/>
         <source>Case sensiti&amp;ve</source>
-        <translation type="unfinished"></translation>
+        <translation>حساس للشكل</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="370"/>
+        <location filename="../filesearch.ui" line="377"/>
         <source>Last Modified Time:</source>
         <translation>آخر وقت تعديل:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="378"/>
+        <location filename="../filesearch.ui" line="385"/>
         <source>Earlier than:</source>
         <translation>كان قبل:</translation>
     </message>
     <message>
-        <location filename="../filesearch.ui" line="385"/>
+        <location filename="../filesearch.ui" line="392"/>
         <source>Later than:</source>
         <translation>كان بعد:</translation>
     </message>

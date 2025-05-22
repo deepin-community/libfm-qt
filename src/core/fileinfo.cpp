@@ -12,7 +12,11 @@ const char defaultGFileInfoQueryAttribs[] = "standard::*,"
                                             "access::*,"
                                             "trash::deletion-date,"
                                             "id::filesystem,"
+                                            "id::file,"
                                             "metadata::emblems,"
+                                            "mountable::can-mount,"
+                                            "mountable::can-unmount,"
+                                            "mountable::can-eject,"
                                             METADATA_TRUST;
 
 FileInfo::FileInfo() {
@@ -39,16 +43,30 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
     GIcon* gicon;
     GFileType type;
 
-    if (const char * name = g_file_info_get_name(inf.get()))
+    if(const char* name = g_file_info_get_name(inf.get())) {
         name_ = name;
+    }
 
     dispName_ = QString::fromUtf8(g_file_info_get_display_name(inf.get()));
 
-    size_ = g_file_info_get_size(inf.get());
+    size_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_STANDARD_SIZE);
 
-    tmp = g_file_info_get_content_type(inf.get());
+    type = g_file_info_get_file_type(inf.get());
+
+    tmp = g_file_info_get_attribute_string(inf.get(), G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE);
     if(tmp) {
-        mimeType_ = MimeType::fromName(tmp);
+        if(size_ == 0 && type == G_FILE_TYPE_REGULAR) {
+            /* Treat zero-sized files based on their extensions,
+               and only if not possible, use GLib's type. */
+            mimeType_ = MimeType::guessFromFileName(name_.c_str());
+            if(mimeType_->isUnknownType()) {
+                mimeType_ = MimeType::fromName(tmp);
+            }
+            icon_ = mimeType_->icon();
+        }
+        else {
+            mimeType_ = MimeType::fromName(tmp);
+        }
     }
 
     mode_ = g_file_info_get_attribute_uint32(inf.get(), G_FILE_ATTRIBUTE_UNIX_MODE);
@@ -61,7 +79,6 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
         gid_ = g_file_info_get_attribute_uint32(inf.get(), G_FILE_ATTRIBUTE_UNIX_GID);
     }
 
-    type = g_file_info_get_file_type(inf.get());
     if(0 == mode_) { /* if UNIX file mode is not available, compose a fake one. */
         switch(type) {
         case G_FILE_TYPE_REGULAR:
@@ -132,8 +149,26 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
     isShortcut_ = (type == G_FILE_TYPE_SHORTCUT);
     isMountable_ = (type == G_FILE_TYPE_MOUNTABLE);
 
+    canMount_ = canUnmount_ = canEject_ = false;
+    if(isMountable_) {
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_MOUNT)) {
+            canMount_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_MOUNT);
+        }
+
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_UNMOUNT)) {
+            canUnmount_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_UNMOUNT);
+        }
+
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_EJECT)) {
+            canEject_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_MOUNTABLE_CAN_EJECT);
+        }
+    }
+
+    isReadOnly_ = false; /* default is R/W */
+    isRemote_ = false; /* default is local */
+
     /* special handling for symlinks */
-    if(g_file_info_get_is_symlink(inf.get())) {
+    if(g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK)) {
         mode_ &= ~S_IFMT; /* reset type */
         mode_ |= S_IFLNK; /* set type to symlink */
         goto _file_is_symlink;
@@ -172,18 +207,20 @@ void FileInfo::setFromGFileInfo(const GObjectPtr<GFileInfo>& inf, const FilePath
         if(!mimeType_) {
             mimeType_ = MimeType::inodeDirectory();
         }
-        isReadOnly_ = false; /* default is R/W */
         if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_FILESYSTEM_READONLY)) {
             isReadOnly_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_FILESYSTEM_READONLY);
         }
-        /* directories should be writable to be deleted by user */
         if(isReadOnly_ || !isWritable_) {
+            /* directories should be writable to be deleted by user */
             isDeletable_ = false;
+        }
+        if(g_file_info_has_attribute(inf.get(), G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE)) {
+            isRemote_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE);
         }
         break;
     case G_FILE_TYPE_SYMBOLIC_LINK:
 _file_is_symlink:
-        uri = g_file_info_get_symlink_target(inf.get());
+        uri = g_file_info_get_attribute_byte_string(inf.get(), G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET);
         if(uri) {
             if(g_str_has_prefix(uri, "file:///")) {
                 auto filename = CStrPtr{g_filename_from_uri(uri, nullptr, nullptr)};
@@ -219,7 +256,10 @@ _file_is_symlink:
             if(g_key_file_load_from_file(kf, dot_dir.get(), G_KEY_FILE_NONE, nullptr)) {
                 CStrPtr icon_name{g_key_file_get_string(kf, "Desktop Entry", "Icon", nullptr)};
                 if(icon_name) {
-                    auto dot_icon = IconInfo::fromName(icon_name.get());
+                    // also allow relative icon paths
+                    auto dot_icon = IconInfo::fromName(g_strstr_len(icon_name.get(), -1, G_DIR_SEPARATOR_S)
+                                    ? path().relativePath(icon_name.get()).toString().get()
+                                    : icon_name.get());
                     if(dot_icon && dot_icon->isValid()) {
                         icon_ = dot_icon;
                     }
@@ -238,7 +278,7 @@ _file_is_symlink:
     }
 
 #if 0
-    /* set "locked" icon on unaccesible folder */
+    /* set "locked" icon on unaccessible folder */
     else if(!accessible && type == G_FILE_TYPE_DIRECTORY) {
         icon = g_object_ref(icon_locked_folder);
     }
@@ -259,19 +299,23 @@ _file_is_symlink:
     tmp = g_file_info_get_attribute_string(inf.get(), G_FILE_ATTRIBUTE_ID_FILESYSTEM);
     filesystemId_ = g_intern_string(tmp);
 
+    tmp = g_file_info_get_attribute_string(inf.get(), G_FILE_ATTRIBUTE_ID_FILE);
+    fileId_ = g_intern_string(tmp);
+
     mtime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_MODIFIED);
     atime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_ACCESS);
     ctime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_CHANGED);
+    crtime_ = g_file_info_get_attribute_uint64(inf.get(), G_FILE_ATTRIBUTE_TIME_CREATED);
     if(auto dt = g_file_info_get_deletion_date(inf.get())){
         dtime_ = g_date_time_to_unix(dt);
     }
     else {
         dtime_ = 0;
     }
-    isHidden_ = g_file_info_get_is_hidden(inf.get());
+    isHidden_ = g_file_info_get_attribute_boolean(inf.get(), G_FILE_ATTRIBUTE_STANDARD_IS_HIDDEN);
     // g_file_info_get_is_backup() does not cover ".bak" and ".old".
     // NOTE: Here, dispName_ is not modified for desktop entries yet.
-    isBackup_ = g_file_info_get_is_backup(inf.get())
+    isBackup_ = g_file_info_get_attribute_boolean (inf.get(), G_FILE_ATTRIBUTE_STANDARD_IS_BACKUP)
                 || dispName_.endsWith(QLatin1String(".bak"))
                 || dispName_.endsWith(QLatin1String(".old"));
     isNameChangeable_ = true; /* GVFS tends to ignore this attribute */
@@ -354,15 +398,14 @@ bool FileInfo::isExecutableType() const {
          they are native and have read permission */
         if(isNative() && (mode_ & (S_IRUSR|S_IRGRP|S_IROTH))) {
             if(isShortcut() && !target_.empty()) {
-                /* handle shortcuts from desktop to menu entries:
-                   first check for entries in /usr/share/applications and such
-                   which may be considered as a safe desktop entry path
-                   then check if that is a shortcut to a native file
-                   otherwise it is a link to a file under menu:// */
-                if (!g_str_has_prefix(target_.c_str(), "/usr/share/")) {
-                    auto target = FilePath::fromPathStr(target_.c_str());
-                    bool is_native = target.isNative();
-                    if (is_native) {
+                /* first check if this is a shortcut to a native file
+                   (otherwise it is a link to a file under menu://),
+                   then check for entries in /usr/share/applications and such
+                   which may be considered as a safe desktop entry path */
+                auto target = FilePath::fromPathStr(target_.c_str());
+                if(target.isNative()) {
+                    auto usrShare = FilePath::fromPathStr("/usr/share/");
+                    if(!usrShare.isPrefixOf(target)) {
                         return true;
                     }
                 }
@@ -410,7 +453,7 @@ void FileInfo::setTrustable(bool trust) const {
     if(!isExecutableType()) {
         return; // METADATA_TRUST is only for executables
     }
-    GObjectPtr<GFileInfo> info {g_file_info_new()}; // used to set only this attribute
+    GFileInfoPtr info{g_file_info_new(), false}; // used to set only this attribute
     if(trust) {
         g_file_info_set_attribute_string(info.get(), METADATA_TRUST, "true");
         g_file_info_set_attribute_string(inf_.get(), METADATA_TRUST, "true");
@@ -425,6 +468,43 @@ void FileInfo::setTrustable(bool trust) const {
                                     nullptr, nullptr);
 }
 
+void FileInfo::setEmblem(const QString& emblmeName, bool setGFileEmblem) const {
+    QByteArray str;
+    if(!emblmeName.isEmpty()) {
+        str = emblmeName.toLocal8Bit();
+        char* stringv[] = {str.data(), nullptr};
+        g_file_info_set_attribute_stringv(inf_.get(), "metadata::emblems", stringv);
+    }
+    else {
+        g_file_info_set_attribute(inf_.get(), "metadata::emblems", G_FILE_ATTRIBUTE_TYPE_INVALID, nullptr);
+    }
+    // update current emblems
+    emblems_.clear();
+    if(g_file_info_get_attribute_type(inf_.get(), "metadata::emblems") == G_FILE_ATTRIBUTE_TYPE_STRINGV) {
+        auto emblem_names = g_file_info_get_attribute_stringv(inf_.get(), "metadata::emblems");
+        if(emblem_names) {
+            auto n_emblems = g_strv_length(emblem_names);
+            for(int i = n_emblems - 1; i >= 0; --i) {
+                emblems_.emplace_front(Fm::IconInfo::fromName(emblem_names[i]));
+            }
+        }
+    }
+
+    if(setGFileEmblem) { // really give the emblem to GFile
+        GFileInfoPtr info{g_file_info_new(), false};
+        if(!str.isEmpty()) {
+            char* stringv[] = {str.data(), nullptr};
+            g_file_info_set_attribute_stringv(info.get(), "metadata::emblems", stringv);
+        }
+        else {
+            g_file_info_set_attribute(info.get(), "metadata::emblems", G_FILE_ATTRIBUTE_TYPE_INVALID, nullptr);
+        }
+        g_file_set_attributes_from_info(path().gfile().get(),
+                                        info.get(),
+                                        G_FILE_QUERY_INFO_NONE,
+                                        nullptr, nullptr);
+    }
+}
 
 bool FileInfoList::isSameType() const {
     if(!empty()) {

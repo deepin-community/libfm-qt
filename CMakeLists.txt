@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18.0 FATAL_ERROR)
 # CMP0000: Call the cmake_minimum_required() command at the beginning of the top-level
 # CMakeLists.txt file even before calling the project() command.
 # The cmake_minimum_required(VERSION) command implicitly invokes the cmake_policy(VERSION)
@@ -6,10 +6,10 @@ cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
 # versions.
 project(libfm-qt)
 
-set(LIBFM_QT_LIBRARY_NAME "fm-qt" CACHE STRING "fm-qt")
+set(LIBFM_QT_LIBRARY_NAME "fm-qt6" CACHE STRING "fm-qt6")
 
-set(LIBFM_QT_API_VERSION_MAJOR 0)
-set(LIBFM_QT_API_VERSION_MINOR 16)
+set(LIBFM_QT_API_VERSION_MAJOR 2)
+set(LIBFM_QT_API_VERSION_MINOR 1)
 set(LIBFM_QT_API_VERSION_PATCH 0)
 set(LIBFM_QT_API_VERSION ${LIBFM_QT_API_VERSION_MAJOR}.${LIBFM_QT_API_VERSION_MINOR}.${LIBFM_QT_API_VERSION_PATCH})
 
@@ -23,25 +23,26 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 # universal way to translate a libtool version-info to a cmake version.
 # We use "(current-age).age.revision" as the cmake version.
 # current: 6, revision: 0, age: 0 => version: 6.0.0
-set(LIBFM_QT_ABI_VERSION "8.0.0")
-set(LIBFM_QT_SOVERSION "8")
+set(LIBFM_QT_ABI_VERSION "15.0.0")
+set(LIBFM_QT_SOVERSION "15")
 
 set(GLIB_MINIMUM_VERSION "2.50.0")
 set(LIBMENUCACHE_MINIMUM_VERSION "1.1.0")
-set(LXQTBT_MINIMUM_VERSION "0.8.0")
-set(QT_MINIMUM_VERSION "5.12.0")
+set(LXQTMENUDATA_MINIMUM_VERSION "2.1.0")
+set(LXQTBT_MINIMUM_VERSION "2.1.0")
+set(QT_MINIMUM_VERSION "6.6.0")
 
-find_package(Qt5Widgets "${QT_MINIMUM_VERSION}" REQUIRED)
-find_package(Qt5LinguistTools "${QT_MINIMUM_VERSION}" REQUIRED)
-find_package(Qt5X11Extras "${QT_MINIMUM_VERSION}" REQUIRED)
+find_package(Qt6Widgets "${QT_MINIMUM_VERSION}" REQUIRED)
+find_package(Qt6LinguistTools "${QT_MINIMUM_VERSION}" REQUIRED)
 
-find_package(lxqt-build-tools "${LXQTBT_MINIMUM_VERSION}" REQUIRED)
+find_package(lxqt2-build-tools "${LXQTBT_MINIMUM_VERSION}" REQUIRED)
 find_package(GLIB "${GLIB_MINIMUM_VERSION}" REQUIRED COMPONENTS gio gio-unix gobject gthread)
 find_package(MenuCache "${LIBMENUCACHE_MINIMUM_VERSION}" REQUIRED)
+find_package(lxqt-menu-data "${LXQTMENUDATA_MINIMUM_VERSION}" REQUIRED)
 find_package(Exif REQUIRED)
 find_package(XCB REQUIRED)
 
-message(STATUS "Building ${PROJECT_NAME} with Qt ${Qt5Core_VERSION}")
+message(STATUS "Building ${PROJECT_NAME} with Qt ${Qt6Core_VERSION}")
 
 option(UPDATE_TRANSLATIONS "Update source translation translations/*.ts files" OFF)
 include(GNUInstallDirs)

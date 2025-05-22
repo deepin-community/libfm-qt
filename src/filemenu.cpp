@@ -25,6 +25,7 @@
 #include "fileoperation.h"
 #include "filelauncher.h"
 #include "appchooserdialog.h"
+#include "mountoperation.h"
 
 #include "customactions/fileaction.h"
 #include "customaction_p.h"
@@ -56,6 +57,7 @@ FileMenu::FileMenu(Fm::FileInfoList files, std::shared_ptr<const Fm::FileInfo> i
     openAction_ = nullptr;
     openWithMenuAction_ = nullptr;
     openWithAction_ = nullptr;
+    createAction_ = nullptr;
     separator1_ = nullptr;
     cutAction_ = nullptr;
     copyAction_ = nullptr;
@@ -113,18 +115,19 @@ FileMenu::FileMenu(Fm::FileInfoList files, std::shared_ptr<const Fm::FileInfo> i
         }
     }
     menu->addSeparator();
-    openWithAction_ = new QAction(tr("Other Applications"), this);
+    openWithAction_ = new QAction(QIcon::fromTheme(QStringLiteral("applications-other")), tr("Other Applications"), this);
     connect(openWithAction_, &QAction::triggered, this, &FileMenu::onOpenWithTriggered);
     menu->addAction(openWithAction_);
 
     separator1_ = addSeparator();
 
-    createAction_ = new QAction(tr("Create &New"), this);
-    Fm::FilePath dirPath = files_.size() == 1 && info_->isDir() ? path : cwd_;
-    createAction_->setMenu(new CreateNewMenu(parent, dirPath, this));
-    addAction(createAction_);
-
-    separator2_ = addSeparator();
+    if(!allTrash_) {
+        createAction_ = new QAction(tr("Create &New"), this);
+        Fm::FilePath dirPath = files_.size() == 1 && info_->isDir() ? path : cwd_;
+        createAction_->setMenu(new CreateNewMenu(parent, dirPath, this));
+        addAction(createAction_);
+        separator2_ = addSeparator();
+    }
 
     if(allTrash_) { // all selected files are in trash:///
         bool can_restore = true;
@@ -141,6 +144,10 @@ FileMenu::FileMenu(Fm::FileInfoList files, std::shared_ptr<const Fm::FileInfo> i
             unTrashAction_ = new QAction(tr("&Restore"), this);
             connect(unTrashAction_, &QAction::triggered, this, &FileMenu::onUnTrashTriggered);
             addAction(unTrashAction_);
+
+            deleteAction_ = new QAction(QIcon::fromTheme(QStringLiteral("edit-delete")), tr("&Delete"), this);
+            connect(deleteAction_, &QAction::triggered, this, &FileMenu::onDeleteTriggered);
+            addAction(deleteAction_);
         }
     }
     else { // ordinary files
@@ -160,7 +167,7 @@ FileMenu::FileMenu(Fm::FileInfoList files, std::shared_ptr<const Fm::FileInfo> i
         connect(deleteAction_, &QAction::triggered, this, &FileMenu::onDeleteTriggered);
         addAction(deleteAction_);
 
-        renameAction_ = new QAction(tr("Rename"), this);
+        renameAction_ = new QAction(QIcon::fromTheme(QStringLiteral("edit-rename")), tr("Rename"), this);
         connect(renameAction_, &QAction::triggered, this, &FileMenu::onRenameTriggered);
         addAction(renameAction_);
 
@@ -189,26 +196,76 @@ FileMenu::FileMenu(Fm::FileInfoList files, std::shared_ptr<const Fm::FileInfo> i
         if(!(sameType_ && info_->isDir()
              && (files_.size() > 1 ? isWritableDir : info_->isWritable()))) {
             pasteAction_->setEnabled(false);
-            createAction_->setEnabled(false);
+            if(createAction_) {
+                createAction_->setEnabled(false);
+            }
         }
     }
 
     // DES-EMA custom actions integration
     // FIXME: port these parts to Fm API
     auto custom_actions = FileActionItem::get_actions_for_files(files_);
+    bool firstAction = true;
     for(auto& item: custom_actions) {
         if(item && !(item->get_target() & FILE_ACTION_TARGET_CONTEXT)) {
             continue;  // this item is not for context menu
         }
-        if(item == custom_actions.front() && !item->is_action()) {
+        if(firstAction) {
             addSeparator(); // before all custom actions
+            firstAction = false;
         }
         addCustomActionItem(this, item);
     }
 
+
+    // mount, unmount and eject, e.g., in computer:///
+    if(files_.size() == 1) {
+        QAction* mountSeparator = nullptr;
+        if(info_ ->canMount()) {
+            mountSeparator = addSeparator();
+            QAction* action = new QAction(tr("Mount"), this);
+            connect(action, &QAction::triggered, this, [this] {
+                if(info_->canMount()) {
+                    MountOperation* op = new MountOperation(true, parentWidget());
+                    op->mountMountable(info_->path());
+                    op->wait();
+                }
+            });
+            addAction(action);
+        }
+        if(info_ ->canUnmount()) {
+            if(!mountSeparator) {
+                mountSeparator = addSeparator();
+            }
+            QAction* action = new QAction(tr("Unmount"), this);
+            connect(action, &QAction::triggered, this, [this] {
+                if(info_->canUnmount()) {
+                    MountOperation* op = new MountOperation(true, parentWidget());
+                    op->unmount(info_->path());
+                    op->wait();
+                }
+            });
+            addAction(action);
+        }
+        if(info_ ->canEject()) {
+            if(!mountSeparator) {
+                addSeparator();
+            }
+            QAction* action = new QAction(QIcon::fromTheme(QStringLiteral("media-eject")), tr("Eject"), this);
+            connect(action, &QAction::triggered, this, [this] {
+                if(info_->canEject()) {
+                    MountOperation* op = new MountOperation(true, parentWidget());
+                    op->eject(info_->path());
+                    op->wait();
+                }
+            });
+            addAction(action);
+        }
+    }
+
     // archiver integration
-    // FIXME: we need to modify upstream libfm to include some Qt-based archiver programs.
-    if(!allVirtual_) {
+    if(!allVirtual_ && !allTrash_
+       && !(sameFilesystem_ && path.hasUriScheme("computer"))) {
         auto archiver = Archiver::defaultArchiver();
         if(archiver) {
             if(sameType_ && archiver->isMimeTypeSupported(mime_type->name())) {
@@ -248,7 +305,10 @@ FileMenu::~FileMenu() {
 }
 
 void FileMenu::addTrustAction() {
-    if(info_->isExecutableType()) {
+    if(info_->isExecutableType()
+       // check if it is really executable and not just an executable file type
+       && (info_->isDesktopEntry()
+           || g_file_test(info_->path().localPath().get(), G_FILE_TEST_IS_EXECUTABLE))) {
         QAction* trustAction = new QAction(files_.size() > 1
                                              ? tr("Trust selected executables")
                                              : tr("Trust this executable"),
@@ -284,11 +344,25 @@ void FileMenu::addCustomActionItem(QMenu* menu, std::shared_ptr<const FileAction
         }
     }
     else if(item->is_action()) {
-        connect(action, &QAction::triggered, this, &FileMenu::onCustomActionTrigerred);
+        connect(action, &QAction::triggered, this, &FileMenu::onCustomActionTriggered);
     }
 }
 
 void FileMenu::onOpenTriggered() {
+    if(files_.size() > 20) {
+        QMessageBox::StandardButton r = QMessageBox::question(
+                                        parentWidget() ? parentWidget()->window()
+                                                        : nullptr,
+                                        tr("Many files"),
+                                        tr("Do you want to open these %1 files?",
+                                           nullptr,
+                                           files_.size()).arg(files_.size()),
+                                        QMessageBox::Yes | QMessageBox::No,
+                                        QMessageBox::No);
+        if(r == QMessageBox::No) {
+            return;
+        }
+    }
     if(fileLauncher_) {
         fileLauncher_->launchFiles(nullptr, files_);
     }
@@ -316,14 +390,17 @@ void FileMenu::onOpenWithTriggered() {
 }
 
 void FileMenu::openFilesWithApp(GAppInfo* app) {
-    GList* uris = nullptr;
+    Fm::FilePathList paths;
     for(auto& file: files_) {
-        auto uri = file->path().uri();
-        uris = g_list_prepend(uris, uri.release());
+        paths.emplace_back(file->path());
     }
-    uris = g_list_reverse(uris); // respect the original order
-    fm_app_info_launch_uris(app, uris, nullptr, nullptr);
-    g_list_free_full(uris, g_free);
+    if(fileLauncher_) {
+        fileLauncher_->launchWithApp(nullptr, app, paths);
+    }
+    else {
+        Fm::FileLauncher launcher;
+        launcher.launchWithApp(nullptr, app, paths);
+    }
 }
 
 void FileMenu::onApplicationTriggered() {
@@ -331,7 +408,7 @@ void FileMenu::onApplicationTriggered() {
     openFilesWithApp(action->appInfo().get());
 }
 
-void FileMenu::onCustomActionTrigerred() {
+void FileMenu::onCustomActionTriggered() {
     CustomAction* action = static_cast<CustomAction*>(sender());
     auto& item = action->item();
     /* g_debug("item: %s is activated, id:%s", fm_file_action_item_get_name(item),
@@ -350,7 +427,7 @@ void FileMenu::onTrustToggled(bool checked) {
 }
 
 void FileMenu::onFilePropertiesTriggered() {
-    FilePropsDialog::showForFiles(files_);
+    FilePropsDialog::showForFiles(files_, parentWidget() ? parentWidget()->window() : nullptr);
 }
 
 void FileMenu::onCopyTriggered() {
@@ -363,7 +440,7 @@ void FileMenu::onCutTriggered() {
 
 void FileMenu::onDeleteTriggered() {
     auto paths = files_.paths();
-    if(useTrash_) {
+    if(useTrash_ && !info_->path().hasUriScheme("trash")) {
         FileOperation::trashFiles(paths, confirmTrash_, parentWidget());
     }
     else {
@@ -403,7 +480,7 @@ void FileMenu::onRenameTriggered() {
 void FileMenu::setUseTrash(bool trash) {
     if(useTrash_ != trash) {
         useTrash_ = trash;
-        if(deleteAction_) {
+        if(deleteAction_ && !info_->path().hasUriScheme("trash")) {
             deleteAction_->setText(useTrash_ ? tr("&Move to Trash") : tr("&Delete"));
             deleteAction_->setIcon(useTrash_ ? QIcon::fromTheme(QStringLiteral("user-trash")) : QIcon::fromTheme(QStringLiteral("edit-delete")));
         }

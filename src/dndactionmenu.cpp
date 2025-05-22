@@ -38,16 +38,17 @@ DndActionMenu::DndActionMenu(Qt::DropActions possibleActions, QWidget* parent)
         linkAction = addAction(tr("Create symlink here"));
     }
     addSeparator();
-    cancelAction = addAction(tr("Cancel"));
+    cancelAction = addAction(copyAction || moveAction || linkAction ?
+                             tr("Cancel") : tr("Cannot drop here"));
 }
 
 DndActionMenu::~DndActionMenu() {
 
 }
 
-Qt::DropAction DndActionMenu::askUser(Qt::DropActions possibleActions, QPoint pos) {
+Qt::DropAction DndActionMenu::askUser(Qt::DropActions possibleActions, QPoint pos, QWidget* parent) {
     Qt::DropAction result = Qt::IgnoreAction;
-    DndActionMenu menu{possibleActions};
+    DndActionMenu menu{possibleActions, parent};
     QAction* action = menu.exec(pos);
     if(nullptr != action) {
         if(action == menu.copyAction) {

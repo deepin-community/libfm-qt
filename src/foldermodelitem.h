@@ -25,7 +25,7 @@
 #include <QImage>
 #include <QString>
 #include <QIcon>
-#include <QVector>
+#include <QList>
 
 #include "core/folder.h"
 
@@ -71,6 +71,8 @@ public:
 
     const QString& displayMtime() const;
 
+    const QString& displayCrtime() const;
+
     const QString& displayDtime() const;
 
     const QString &displaySize() const;
@@ -81,9 +83,10 @@ public:
 
     std::shared_ptr<const Fm::FileInfo> info;
     mutable QString dispMtime_;
+    mutable QString dispCrtime_;
     mutable QString dispDtime_;
     mutable QString dispSize_;
-    QVector<Thumbnail> thumbnails;
+    QList<Thumbnail> thumbnails;
     bool isCut;
 };
 

@@ -53,7 +53,7 @@ RenameDialog::RenameDialog(const FileInfo &src, const FileInfo &dest, QWidget* p
     QString infoStr;
     // FIXME: deprecate fm_config
     auto disp_size = Fm::formatFileSize(src.size(), fm_config->si_unit);
-    auto srcMtime = QDateTime::fromMSecsSinceEpoch(src.mtime() * 1000).toString(Qt::SystemLocaleShortDate);
+    auto srcMtime = locale().toString(QDateTime::fromMSecsSinceEpoch(src.mtime() * 1000), QLocale::ShortFormat);
     if(!disp_size.isEmpty()) {
         infoStr = QString(tr("Type: %1\nSize: %2\nModified: %3"))
                   .arg(src.description(),
@@ -72,7 +72,7 @@ RenameDialog::RenameDialog(const FileInfo &src, const FileInfo &dest, QWidget* p
     ui->destIcon->setPixmap(pixmap);
 
     disp_size = Fm::formatFileSize(dest.size(), fm_config->si_unit);
-    auto destMtime = QDateTime::fromMSecsSinceEpoch(dest.mtime() * 1000).toString(Qt::SystemLocaleShortDate);
+    auto destMtime = locale().toString(QDateTime::fromMSecsSinceEpoch(dest.mtime() * 1000), QLocale::ShortFormat);
     if(!disp_size.isEmpty()) {
         infoStr = QString(tr("Type: %1\nSize: %2\nModified: %3"))
                   .arg(dest.description(),
@@ -88,8 +88,16 @@ RenameDialog::RenameDialog(const FileInfo &src, const FileInfo &dest, QWidget* p
 
     auto basename = path.baseName();
     ui->fileName->setText(QString::fromUtf8(basename.get()));
+    int length = ui->fileName->text().lastIndexOf(QStringLiteral("."));
+    if(length > 0 && length < ui->fileName->text().size() - 1) {
+        ui->fileName->setSelection(0, length);
+    }
+    else {
+        ui->fileName->selectAll();
+    }
     oldName_ = QString::fromUtf8(basename.get());
     connect(ui->fileName, &QLineEdit::textChanged, this, &RenameDialog::onFileNameChanged);
+    ui->fileName->setFocus(); // needed with Qt >= 6.6.1
 
     // add "Rename" button
     QAbstractButton* button = ui->buttonBox->button(QDialogButtonBox::Ok);
@@ -98,6 +106,15 @@ RenameDialog::RenameDialog(const FileInfo &src, const FileInfo &dest, QWidget* p
     renameButton_ = ui->buttonBox->addButton(tr("&Rename"), QDialogButtonBox::ActionRole);
     connect(renameButton_, &QPushButton::clicked, this, &RenameDialog::onRenameClicked);
     renameButton_->setEnabled(false); // disabled by default
+
+    // do not allow self-overwriting; tell user to choose another name instead
+    if(path == src.path()) {
+        button->setEnabled(false);
+        ui->srcLabel->setVisible(false);
+        ui->srcIcon->setVisible(false);
+        ui->srcInfo->setVisible(false);
+        ui->label->setText(tr("<p><b>The file cannot overwrite itself.</b></p><p>Please select another name.</p>"));
+    }
 
     button = ui->buttonBox->button(QDialogButtonBox::Ignore);
     connect(button, &QPushButton::clicked, this, &RenameDialog::onIgnoreClicked);
@@ -136,7 +153,11 @@ void RenameDialog::onFileNameChanged(QString newName) {
     renameButton_->setEnabled(hasNewName);
     renameButton_->setDefault(hasNewName);
 
-    // change default button to rename rather than overwrire
+    if(!ui->srcInfo->isVisible()) {
+        return; // this was a self-overwriting prompt
+    }
+
+    // change default button to rename rather than overwrite
     // if the user typed a new filename
     QPushButton* overwriteButton = static_cast<QPushButton*>(ui->buttonBox->button(QDialogButtonBox::Ok));
     overwriteButton->setEnabled(!hasNewName);

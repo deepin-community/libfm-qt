@@ -23,12 +23,15 @@
 #include "placesmodelitem.h"
 #include "mountoperation.h"
 #include "fileoperation.h"
+#include "dndactionmenu.h"
+#include "utilities.h"
 #include <QMenu>
 #include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QDebug>
 #include <QGuiApplication>
 #include <QTimer>
+#include <QMimeData>
 #include "folderitemdelegate.h"
 
 namespace Fm {
@@ -326,13 +329,69 @@ void PlacesView::dragMoveEvent(QDragMoveEvent* event) {
 }
 
 void PlacesView::dropEvent(QDropEvent* event) {
+    // NOTE: Under Wayland, serious problems will happen if the DND menu is shown
+    // while the DND is in progress. Also, the menu needs a parent for correct positioning.
+    if(!event->mimeData()->hasFormat(QStringLiteral("application/x-bookmark-row")) // dropped data is not a bookmark row
+       && event->mimeData()->hasUrls()) { // file uris are dropped
+        QModelIndex index = indexAt(event->position().toPoint());
+        if(index.isValid()
+           && index.column() == 0 // the real item is at column 0
+           && index.parent().isValid()) { // should be a child item
+            PlacesModelItem* item = static_cast<PlacesModelItem*>(model_->itemFromIndex(proxyModel_->mapToSource(index)));
+            if(item
+               && item->type() != PlacesModelItem::Mount
+               && (item->type() != PlacesModelItem::Volume
+                   || static_cast<PlacesModelVolumeItem*>(item)->isMounted())) {
+                auto destPath = item->path();
+                if(destPath
+                   && strcmp(destPath.toString().get(), "menu://applications/") != 0
+                   && strcmp(destPath.toString().get(), "network:///") != 0
+                   && strcmp(destPath.toString().get(), "computer:///") != 0 ) {
+                    auto srcPaths = pathListFromQUrls(event->mimeData()->urls());
+                    if(!srcPaths.empty()) {
+                        auto curPos = viewport()->mapToGlobal(event->position().toPoint());
+                        QTimer::singleShot(0, this, [this, curPos, srcPaths, destPath] {
+                            if(strcmp(destPath.toString().get(), "trash:///") == 0) {
+                                Qt::DropAction action = DndActionMenu::askUser(Qt::MoveAction, curPos, viewport());
+                                if (action == Qt::MoveAction) {
+                                    FileOperation::trashFiles(srcPaths, false);
+                                }
+                            }
+                            else {
+                                Qt::DropAction action = DndActionMenu::askUser(Qt::CopyAction | Qt::MoveAction | Qt::LinkAction, curPos, viewport());
+                                switch(action) {
+                                case Qt::CopyAction:
+                                    FileOperation::copyFiles(srcPaths, destPath);
+                                    break;
+                                case Qt::MoveAction:
+                                    FileOperation::moveFiles(srcPaths, destPath);
+                                    break;
+                                case Qt::LinkAction:
+                                    FileOperation::symlinkFiles(srcPaths, destPath);
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
+                        });
+                        event->accept(); // prevent further event propagation
+                    }
+                }
+            }
+        }
+    }
+
     QTreeView::dropEvent(event);
 }
 
 void PlacesView::onEmptyTrash() {
-    Fm::FilePathList files;
-    files.push_back(Fm::FilePath::fromUri("trash:///"));
-    Fm::FileOperation::deleteFiles(std::move(files), true, this);
+    // The main event loop might be blocked by a question message box and
+    // cause a crash with Qt6 if the current slot does not return first.
+    QTimer::singleShot(0, this, [] {
+        Fm::FilePathList files;
+        files.push_back(Fm::FilePath::fromUri("trash:///"));
+        Fm::FileOperation::deleteFiles(std::move(files), true);
+    });
 }
 
 void PlacesView::onMoveBookmarkUp() {
@@ -357,9 +416,10 @@ void PlacesView::onMoveBookmarkDown() {
     PlacesModelBookmarkItem* item = static_cast<PlacesModelBookmarkItem*>(model_->itemFromIndex(action->index()));
 
     int row = item->row();
-    if(row < model_->rowCount()) {
+    QModelIndex indx = proxyModel_->mapFromSource(model_->bookmarksRoot->index());
+    if(indx.isValid() && row < indx.model()->rowCount(indx) - 1) {
         auto bookmarkItem = item->bookmark();
-        Fm::Bookmarks::globalInstance()->reorder(bookmarkItem, row + 1);
+        Fm::Bookmarks::globalInstance()->reorder(bookmarkItem, row + 2); // see Bookmarks::reorder()
     }
 }
 
@@ -423,7 +483,10 @@ void PlacesView::onMountVolume() {
     PlacesModelVolumeItem* item = static_cast<PlacesModelVolumeItem*>(model_->itemFromIndex(action->index()));
     MountOperation* op = new MountOperation(true, this);
     op->mount(item->volume());
-    op->wait();
+    // A crash will happen with Qt6 if the current slot does not return first.
+    QTimer::singleShot(0, op, [op] {
+        op->wait();
+    });
 }
 
 void PlacesView::onUnmountVolume() {
@@ -434,7 +497,9 @@ void PlacesView::onUnmountVolume() {
     PlacesModelVolumeItem* item = static_cast<PlacesModelVolumeItem*>(model_->itemFromIndex(action->index()));
     MountOperation* op = new MountOperation(true, this);
     op->unmount(item->volume());
-    op->wait();
+    QTimer::singleShot(0, op, [op] {
+        op->wait();
+    });
 }
 
 void PlacesView::onUnmountMount() {
@@ -446,7 +511,9 @@ void PlacesView::onUnmountMount() {
     GMount* mount = item->mount();
     MountOperation* op = new MountOperation(true, this);
     op->unmount(mount);
-    op->wait();
+    QTimer::singleShot(0, op, [op] {
+        op->wait();
+    });
 }
 
 void PlacesView::onEjectVolume() {
@@ -457,7 +524,9 @@ void PlacesView::onEjectVolume() {
     PlacesModelVolumeItem* item = static_cast<PlacesModelVolumeItem*>(model_->itemFromIndex(action->index()));
     MountOperation* op = new MountOperation(true, this);
     op->eject(item->volume());
-    op->wait();
+    QTimer::singleShot(0, op, [op] {
+        op->wait();
+    });
 }
 
 void PlacesView::contextMenuEvent(QContextMenuEvent* event) {
@@ -467,21 +536,28 @@ void PlacesView::contextMenuEvent(QContextMenuEvent* event) {
             index = index.sibling(index.row(), 0);
         }
 
-        // Do not take the ownership of the menu since
-        // it will be deleted with deleteLater() upon hidden.
-        // This is possibly related to #145 - https://github.com/lxqt/pcmanfm-qt/issues/145
-        QMenu* menu = new QMenu();
-        QAction* action = nullptr;
         PlacesModelItem* item = static_cast<PlacesModelItem*>(model_->itemFromIndex(proxyModel_->mapToSource(index)));
+        if(item == nullptr) {
+            return;
+        }
+
+        // The ownership of the menu is taken because that may be needed for
+        // correct positioning under Wayland, especially when the window is
+        // inactive (it is safe under X11), but the menu will be deleted by
+        // deleteLater() when it is going to hide.
+        QMenu* menu = new QMenu(this);
+        QAction* action = nullptr;
 
         if(index.parent().isValid()
            && item->type() != PlacesModelItem::Mount
            && (item->type() != PlacesModelItem::Volume
                || static_cast<PlacesModelVolumeItem*>(item)->isMounted())) {
             action = new PlacesModel::ItemAction(item->index(), tr("Open in New Tab"), menu);
+            action->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
             connect(action, &QAction::triggered, this, &PlacesView::onOpenNewTab);
             menu->addAction(action);
             action = new PlacesModel::ItemAction(item->index(), tr("Open in New Window"), menu);
+            action->setIcon(QIcon::fromTheme(QStringLiteral("window-new")));
             connect(action, &QAction::triggered, this, &PlacesView::onOpenNewWindow);
             menu->addAction(action);
         }
@@ -531,18 +607,23 @@ void PlacesView::contextMenuEvent(QContextMenuEvent* event) {
             // create context menu for bookmark item
             if(item->index().row() > 0) {
                 action = new PlacesModel::ItemAction(item->index(), tr("Move Bookmark Up"), menu);
+                action->setIcon(QIcon::fromTheme(QStringLiteral("go-up")));
                 connect(action, &QAction::triggered, this, &PlacesView::onMoveBookmarkUp);
                 menu->addAction(action);
             }
-            if(item->index().row() < model_->rowCount()) {
+            QModelIndex indx = proxyModel_->mapFromSource(model_->bookmarksRoot->index());
+            if(indx.isValid() && item->index().row() < indx.model()->rowCount(indx) - 1) {
                 action = new PlacesModel::ItemAction(item->index(), tr("Move Bookmark Down"), menu);
+                action->setIcon(QIcon::fromTheme(QStringLiteral("go-down")));
                 connect(action, &QAction::triggered, this, &PlacesView::onMoveBookmarkDown);
                 menu->addAction(action);
             }
             action = new PlacesModel::ItemAction(item->index(), tr("Rename Bookmark"), menu);
+            action->setIcon(QIcon::fromTheme(QStringLiteral("edit-rename")));
             connect(action, &QAction::triggered, this, &PlacesView::onRenameBookmark);
             menu->addAction(action);
             action = new PlacesModel::ItemAction(item->index(), tr("Remove Bookmark"), menu);
+            action->setIcon(QIcon::fromTheme(QStringLiteral("edit-delete")));
             connect(action, &QAction::triggered, this, &PlacesView::onDeleteBookmark);
             menu->addAction(action);
             break;

@@ -14,6 +14,7 @@
 #include <QMimeDatabase>
 #include <QMessageBox>
 #include <QToolBar>
+#include <QActionGroup>
 #include <QCompleter>
 #include <QShortcut>
 #include <QTimer>
@@ -34,7 +35,8 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     acceptMode_{QFileDialog::AcceptOpen},
     confirmOverwrite_{true},
     modelFilter_{this},
-    noItemTooltip_{false} {
+    noItemTooltip_{false},
+    scrollPerPixel_{true} {
 
     ui->setupUi(this);
 
@@ -51,7 +53,7 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     connect(ui->sidePane, &SidePane::hiddenPlaceSet, this, &FileDialog::onSettingHiddenPlace);
 
     // folder view
-    proxyModel_ = new ProxyFolderModel(this);
+    proxyModel_ = new ProxyFolderModel();
     proxyModel_->sort(FolderModel::ColumnFileName, Qt::AscendingOrder);
     proxyModel_->setThumbnailSize(64);
     proxyModel_->setShowThumbnails(true);
@@ -81,7 +83,12 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
                 name += QLatin1Char('.');
                 name += defaultSuffix_;
             }
-            selectFilePath(directoryPath_.child(name.toLocal8Bit().constData()));
+            if(name.contains(QLatin1Char('/'))) {
+                selectFilePath(Fm::FilePath::fromPathStr(name.toLocal8Bit().constData()));
+            }
+            else {
+                selectFilePath(directoryPath_.child(name.toLocal8Bit().constData()));
+            }
         }
         updateAcceptButtonState();
         updateSaveButtonText(false);
@@ -94,14 +101,9 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     connect(ui->fileTypeCombo, &QComboBox::currentTextChanged, [this](const QString& text) {
         selectNameFilter(text);
     });
-    ui->fileTypeCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+    ui->fileTypeCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
     ui->fileTypeCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     ui->fileTypeCombo->setCurrentIndex(0);
-
-    QShortcut* shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_H), this);
-    connect(shortcut, &QShortcut::activated, [this]() {
-        proxyModel_->setShowHidden(!proxyModel_->showHidden());
-    });
 
     // setup toolbar buttons
     auto toolbar = new QToolBar(this);
@@ -142,6 +144,12 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     auto newFolderAction = toolbar->addAction(QIcon::fromTheme(QStringLiteral("folder-new")), tr("Create Folder"));
     connect(newFolderAction, &QAction::triggered, this, &FileDialog::onNewFolder);
     toolbar->addSeparator();
+
+    // a shortcut for deselecting all items
+    QShortcut* shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_D), this);
+    connect(shortcut, &QShortcut::activated, [this]() {
+        ui->folderView->selectionModel()->clearSelection();
+    });
 
     // Options menu
     QMenu* menu = new QMenu(toolbar);
@@ -200,6 +208,18 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
 
     menu->addSeparator();
 
+    // showing hidden files
+    auto showHiddenAction = menu->addAction(tr("Show Hidden"));
+    showHiddenAction->setCheckable(true);
+    connect(showHiddenAction, &QAction::triggered, [this](bool checked) {
+        proxyModel_->setShowHidden(checked);
+    });
+    // also add a separate shortcut for it
+    shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_H), this);
+    connect(shortcut, &QShortcut::activated, [this]() {
+        proxyModel_->setShowHidden(!proxyModel_->showHidden());
+    });
+
     // thumbnail and tooltip actions
     auto thumbnailsAction = menu->addAction(tr("Show Thumbnails"));
     thumbnailsAction->setCheckable(true);
@@ -211,9 +231,20 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
     connect(tooltipsAction, &QAction::triggered, [this](bool checked) {
         setNoItemTooltip(!checked);
     });
-    connect(menu, &QMenu::aboutToShow, [this, thumbnailsAction, tooltipsAction]() {
-        thumbnailsAction->setChecked(proxyModel_ ? proxyModel_->showThumbnails() : true);
+
+    // per-pixel action
+    auto perPixelAction = menu->addAction(tr("Smooth Scrolling"));
+    perPixelAction->setCheckable(true);
+    connect(perPixelAction, &QAction::triggered, [this](bool checked) {
+        setScrollPerPixel(checked);
+    });
+
+    // set the check states when the menu is about to appear
+    connect(menu, &QMenu::aboutToShow, [this, showHiddenAction, thumbnailsAction, tooltipsAction, perPixelAction]() {
+        showHiddenAction->setChecked(proxyModel_->showHidden());
+        thumbnailsAction->setChecked(proxyModel_->showThumbnails());
         tooltipsAction->setChecked(!noItemTooltip_);
+        perPixelAction->setChecked(scrollPerPixel_);
     });
 
     // Options menu button
@@ -247,27 +278,45 @@ FileDialog::FileDialog(QWidget* parent, FilePath path) :
 
 FileDialog::~FileDialog() {
     freeFolder();
+    delete proxyModel_;
+    if(folderModel_) {
+        folderModel_->unref();
+    }
 }
 
 bool FileDialog::eventFilter(QObject* watched, QEvent* event) {
     if (watched == ui->folderView->childView()->viewport() && event->type() == QEvent::ToolTip) {
         return true;
     }
-    // Here we make Tab key switch the focus from the main view to the name entry
-    // and BackTab do the reverse because QWidget::setTabOrder() cannot do that.
     if(event->type() == QEvent::KeyPress) {
         if(QKeyEvent *ke = static_cast<QKeyEvent*>(event)) {
             if(watched == ui->folderView->childView() && ui->folderView->childView()->hasFocus()
-               && ke->key() == Qt::Key_Tab && ke->modifiers() == Qt::NoModifier) {
-                ui->fileName->setFocus();
-                // as in Qt -> QLineEdit::focusInEvent()
-                if(!ui->fileName->hasSelectedText()) {
-                    ui->fileName->selectAll();
+               && ke->modifiers() == Qt::NoModifier) {
+                if(ke->key() == Qt::Key_Tab) {
+                    // Here we make Tab key switch the focus from the main view to the name entry
+                    // and BackTab do the reverse because QWidget::setTabOrder() cannot do that.
+                    ui->fileName->setFocus();
+                    // as in Qt -> QLineEdit::focusInEvent()
+                    if(!ui->fileName->hasSelectedText()) {
+                        ui->fileName->selectAll();
+                    }
+                    return true;
                 }
-                return true;
+                else if(ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {
+                    // Do not accept the dialog by pressing Enter/Return on the current item.
+                    // This prevents double acceptance and its side effects.
+                    QItemSelectionModel* selModel = ui->folderView->selectionModel();
+                    QModelIndex cur = selModel->currentIndex();
+                    if(cur.isValid() && selModel->isSelected(cur)) {
+                        if(auto file = proxyModel_->fileInfoFromIndex(cur)) {
+                            onFileClicked(FolderView::ActivatedClick, file); // activate the item
+                            return true;
+                        }
+                    }
+                }
             }
-            if(watched == ui->fileName && ui->fileName->hasFocus()
-               && ke->key() == Qt::Key_Backtab) {
+            else if(watched == ui->fileName && ui->fileName->hasFocus()
+                    && ke->key() == Qt::Key_Backtab) {
                 ui->folderView->childView()->setFocus();
                 return true;
             }
@@ -400,6 +449,11 @@ void FileDialog::setNoItemTooltip(bool noItemTooltip) {
     }
 }
 
+void FileDialog::setScrollPerPixel(bool perPixel) {
+    scrollPerPixel_ = perPixel;
+    ui->folderView->setScrollPerPixel(scrollPerPixel_);
+}
+
 int FileDialog::bigIconSize() const {
     return ui->folderView->iconSize(FolderView::IconMode).width();
 }
@@ -431,6 +485,14 @@ void FileDialog::setThumbnailIconSize(int size) {
     }
 }
 
+QList<int> FileDialog::getHiddenColumns() const {
+    return ui->folderView->getHiddenColumns();
+}
+
+void FileDialog::setHiddenColumns(const QList<int> &columns) {
+    ui->folderView->setHiddenColumns(columns);
+}
+
 // This should always be used instead of getting text directly from the entry.
 QStringList FileDialog::parseNames() const {
     // parse the file names from the text entry
@@ -446,11 +508,7 @@ QStringList FileDialog::parseNames() const {
            && (firstQuote == 0 || fileNames.at(firstQuote - 1) != QLatin1Char('\\'))
            && fileNames.at(lastQuote - 1) != QLatin1Char('\\')) {
            // split the names
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
             QRegularExpression sep{QStringLiteral("\"\\s+\"")};  // separated with " "
-#else
-            QRegExp sep{QStringLiteral("\"\\s+\"")};  // separated with " "
-#endif
             parsedNames = fileNames.mid(firstQuote + 1, lastQuote - firstQuote - 1).split(sep);
             parsedNames.replaceInStrings(QLatin1String("\\\""), QLatin1String("\""));
         }
@@ -478,7 +536,7 @@ QString FileDialog::suffix(bool checkDefaultSuffix) const {
     if(checkDefaultSuffix && !defaultSuffix_.isEmpty()) {
         return defaultSuffix_;
     }
-    // in the save mode, still try to make a suffix out of the currrent name filter
+    // in the save mode, still try to make a suffix out of the current name filter
     if(acceptMode_ != QFileDialog::AcceptOpen) {
         auto left = currentNameFilter_.lastIndexOf(QLatin1Char('('));
         if(left != -1) {
@@ -486,10 +544,13 @@ QString FileDialog::suffix(bool checkDefaultSuffix) const {
             auto right = currentNameFilter_.indexOf(QLatin1Char(')'), left);
             if(right != -1) {
                 QString nameFilter = currentNameFilter_.mid(left, right - left);
-                QString suffix = nameFilter.simplified().split(QLatin1Char(' '), QString::SkipEmptyParts).at(0);
+                QString suffix = nameFilter.simplified().split(QLatin1Char(' '), Qt::SkipEmptyParts).at(0);
                 left = suffix.indexOf(QLatin1Char('.')); // it can be like ".tar.xz"
                 if(left != -1 && suffix.size() - left > 1) {
-                    return suffix.right(suffix.size() - left - 1);
+                    suffix = suffix.right(suffix.size() - left - 1);
+                    if(suffix.indexOf(QRegularExpression(QStringLiteral("[^\\w\\.]"))) == -1) {
+                        return suffix;
+                    }
                 }
             }
         }
@@ -555,23 +616,57 @@ void FileDialog::accept() {
                 _suffix = suffix();
                 suffixFound = true;
             }
+            Fm::FilePath firstPath;
+            bool exists = false;
+            bool isDir = false;
             // don't consider the suffix yet because a directory with the same name may exist
-            auto childPath = directoryPath_.child(firstName.toLocal8Bit().constData());
-            auto info = folderModel_->fileInfoFromPath(childPath);
-            if(info && info->isDir()) {
+            if(firstName.contains(QLatin1Char('/'))) {
+                // "FilePath::relativePath()" also covers absolute path names
+                // because "g_file_resolve_relative_path()" does
+                firstPath = directoryPath_.relativePath(firstName.toLocal8Bit().constData());
+                auto str = QString::fromUtf8(firstPath.toString().get());
+                if(QFileInfo::exists(str)) {
+                    exists = true;
+                    isDir = QFileInfo(str).isDir();
+                }
+            }
+            else {
+                firstPath = directoryPath_.child(firstName.toLocal8Bit().constData());
+                auto info = folderModel_->fileInfoFromPath(firstPath);
+                if(info != nullptr) {
+                    exists = true;
+                    isDir = info->isDir();
+                }
+            }
+            if(isDir) {
                 // if the typed name belongs to a (nonselected) directory, chdir into it
-                setDirectoryPath(childPath);
+                setDirectoryPath(firstPath);
                 return;
             }
             if(!_suffix.isEmpty()) {
+                exists = false;
                 firstName += QLatin1Char('.');
                 firstName += _suffix;
-                childPath = directoryPath_.child(firstName.toLocal8Bit().constData());
-                info = folderModel_->fileInfoFromPath(childPath);
+                if(firstName.contains(QLatin1Char('/'))) {
+                    firstPath = directoryPath_.relativePath(firstName.toLocal8Bit().constData());
+                    auto str = QString::fromUtf8(firstPath.toString().get());
+                    if(QFileInfo::exists(str)) {
+                        exists = true;
+                        isDir = QFileInfo(str).isDir();
+                    }
+                }
+                else {
+                    firstPath = directoryPath_.child(firstName.toLocal8Bit().constData());
+                    auto info = folderModel_->fileInfoFromPath(firstPath);
+                    if(info != nullptr) {
+                        exists = true;
+                        isDir = info->isDir();
+                    }
+                }
             }
-            if(info) {
-                if(info->isDir()) {
-                    setDirectoryPath(childPath);
+            if(exists) {
+                if(isDir) {
+                    setDirectoryPath(firstPath);
                     return;
                 }
                 // overwrite prompt (as in QFileDialog::accept)
@@ -602,7 +697,13 @@ void FileDialog::accept() {
                     name += _suffix;
                 }
             }
-            auto fullPath = directoryPath_.child(name.toLocal8Bit().constData());
+            Fm::FilePath fullPath;
+            if(name.contains(QLatin1Char('/'))) {
+                fullPath = directoryPath_.relativePath(name.toLocal8Bit().constData());
+            }
+            else {
+                fullPath = directoryPath_.child(name.toLocal8Bit().constData());
+            }
             auto localPath = fullPath.localPath();
             /* add the local path if it exists; otherwise, add the uri */
             if(localPath) {
@@ -698,8 +799,18 @@ void FileDialog::setDirectoryPath(FilePath directory, FilePath selectedPath, boo
         }
     }
     else {
-        updateAcceptButtonState();
-        updateSaveButtonText(false);
+        if(folder_ == nullptr || folder_->isLoaded()) {
+            updateAcceptButtonState();
+            updateSaveButtonText(false);
+        }
+        else {
+            lambdaConnection_ = QObject::connect(folder_.get(), &Fm::Folder::finishLoading, this, [this, selectedPath]() {
+                QTimer::singleShot(0, this, [this]() {
+                    updateAcceptButtonState();
+                    updateSaveButtonText(false);
+                });
+            });
+        }
     }
 }
 
@@ -891,49 +1002,65 @@ void FileDialog::onFileInfoJobFinished() {
         selectedFiles_.clear();
         reject();
     }
+    else if(fileMode_ == QFileDialog::AnyFile) {
+        doAccept(); // non-existent files are allowed
+    }
     else {
         QString error;
         // check if the files exist and their types are correct
+        // FIXME: currently, if a path is not found, FmFileInfoJob does not return its file info object.
+        // This may not be a bad API design. We may return nullptr for the failed file info query instead.
+        size_t fileIdx = 0;
+        int selIdx = 0;
         auto paths = job->paths();
         auto files = job->files();
         for(size_t i = 0; i < paths.size(); ++i) {
             const auto& path = paths[i];
-            if(i >= files.size() || files[i]->path() != path) {
+            if(fileIdx >= files.size() || files[fileIdx]->path() != path) {
                 // the file path is not found and does not have file info
-                if(fileMode_ != QFileDialog::AnyFile) {
-                    // if we do not allow non-existent file, this is an error.
+                if(error.isEmpty()) {
                     error = tr("Path \"%1\" does not exist").arg(QString::fromUtf8(path.displayName().get()));
-                    break;
                 }
-                ++i; // skip the file
-                continue;
+                if(selIdx < selectedFiles_.size()) {
+                    selectedFiles_.removeAt(selIdx);
+                }
+                continue; // skip the file
             }
 
-            // FIXME: currently, if a path is not found, FmFileInfoJob does not return its file info object.
-            // This is bad API design. We may return nullptr for the failed file info query instead.
-            const auto& file = files[i];
+            const auto& file = files[fileIdx];
             // check if the file type is correct
             if(fileMode_ == QFileDialog::Directory) {
                 if(!file->isDir()) {
-                    // we're selecting dirs, but the selected file path does not point to a dir
-                    error = tr("\"%1\" is not a directory").arg(QString::fromUtf8(path.displayName().get()));
-                    break;
+                    if(error.isEmpty()) {
+                        // we're selecting dirs, but the selected file path does not point to a dir
+                        error = tr("\"%1\" is not a directory").arg(QString::fromUtf8(path.displayName().get()));
+                    }
+                    if(selIdx < selectedFiles_.size()) {
+                        selectedFiles_.removeAt(selIdx);
+                    }
                 }
             }
-            else if(file->isDir() || file->isShortcut()) {
-                // we're selecting files, but the selected file path refers to a dir or shortcut (such as computer:///)
-                error = tr("\"%1\" is not a file").arg(QString::fromUtf8(path.displayName().get()));;
-                break;
+            else if(file->isDir() || (file->isShortcut() && !file->isDesktopEntry())) {
+                if(error.isEmpty()) {
+                    // we're selecting files, but the selected file path refers to a dir or shortcut (such as computer:///)
+                    error = tr("\"%1\" is not a file").arg(QString::fromUtf8(path.displayName().get()));
+                }
+                if(selIdx < selectedFiles_.size()) {
+                    selectedFiles_.removeAt(selIdx);
+                }
             }
+            else {
+                ++selIdx;
+            }
+
+            ++fileIdx;
         }
 
-        if(error.isEmpty()) {
-            // no error!
-            doAccept();
-        }
-        else {
+        if(!error.isEmpty()) {
             QMessageBox::critical(this, tr("Error"), error);
-            selectedFiles_.clear();
+        }
+        if(!selectedFiles_.isEmpty()) { // at least one file is accepted
+            doAccept();
         }
     }
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
@@ -1056,10 +1183,6 @@ void FileDialog::setViewMode(FolderView::ViewMode mode) {
 
 
 void FileDialog::setFileMode(QFileDialog::FileMode mode) {
-    if(mode == QFileDialog::DirectoryOnly) {
-        // directly only is deprecated and not allowed.
-        mode = QFileDialog::Directory;
-    }
     fileMode_ = mode;
 
     // enable multiple selection?
@@ -1109,7 +1232,7 @@ void FileDialog::setMimeTypeFilters(const QStringList& filters) {
                 nameFilter += suffix;
                 nameFilter += QLatin1Char(' ');
             }
-            nameFilter[nameFilter.length() - 1] = ')';
+            nameFilter[nameFilter.length() - 1] = QLatin1Char(')');
         }
         nameFilters << nameFilter;
     }
@@ -1175,9 +1298,18 @@ void FileDialog::updateSaveButtonText(bool saveOnFolder) {
         if(!saveOnFolder) {
             QStringList parsedNames = parseNames();
             if(!parsedNames.isEmpty()) {
-                auto info = proxyModel_->fileInfoFromPath(directoryPath_.child(parsedNames.at(0).toLocal8Bit().constData()));
-                if(info && info->isDir()) {
-                    saveOnFolder = true;
+                if(parsedNames.at(0).contains(QLatin1Char('/'))) {
+                    auto path = directoryPath_.relativePath(parsedNames.at(0).toLocal8Bit().constData());
+                    auto str = QString::fromUtf8(path.toString().get());
+                    if(QFileInfo::exists(str) && QFileInfo(str).isDir()) {
+                        saveOnFolder = true;
+                    }
+                }
+                else {
+                    auto info = proxyModel_->fileInfoFromPath(directoryPath_.child(parsedNames.at(0).toLocal8Bit().constData()));
+                    if(info && info->isDir()) {
+                        saveOnFolder = true;
+                    }
                 }
             }
         }
@@ -1201,19 +1333,30 @@ void FileDialog::updateAcceptButtonState() {
     if(fileMode_ != QFileDialog::Directory) {
         if(acceptMode_ == QFileDialog::AcceptOpen)
         {
-            if(firstSelectedDir()) {
-                // enable "open" button if a dir is selected
+            if(firstSelectedDir()
+               || (fileMode_ == QFileDialog::AnyFile && !ui->fileName->text().isEmpty())) {
+                // enable "open" button if a dir is selected or any file can be opened
                 enable = true;
             }
             else {
-              // enable "open" button when there is a file whose name is listed
-              QStringList parsedNames = parseNames();
-              for(auto& name: parsedNames) {
-                  if(proxyModel_->indexFromPath(directoryPath_.child(name.toLocal8Bit().constData())).isValid()) {
-                    enable = true;
-                    break;
-                  }
-              }
+                // enable "open" button when there is a file whose name is listed
+                QStringList parsedNames = parseNames();
+                for(auto& name: parsedNames) {
+                    if(name.contains(QLatin1Char('/'))) {
+                        auto path = directoryPath_.relativePath(name.toLocal8Bit().constData());
+                        auto str = QString::fromUtf8(path.toString().get());
+                        if(QFileInfo::exists(str)) {
+                            enable = true;
+                            break;
+                        }
+                    }
+                    else {
+                        if(proxyModel_->indexFromPath(directoryPath_.child(name.toLocal8Bit().constData())).isValid()) {
+                            enable = true;
+                            break;
+                        }
+                    }
+                }
             }
         }
         else if(acceptMode_ == QFileDialog::AcceptSave) {
@@ -1236,11 +1379,21 @@ void FileDialog::updateAcceptButtonState() {
         }
         else {
             for(auto& name: parsedNames) {
-                auto info = proxyModel_->fileInfoFromPath(directoryPath_.child(name.toLocal8Bit().constData()));
-                if(info && info->isDir()) {
-                    // the name of a dir is listed
-                    enable = true;
-                    break;
+                if(name.contains(QLatin1Char('/'))) {
+                    auto path = directoryPath_.relativePath(name.toLocal8Bit().constData());
+                    auto str = QString::fromUtf8(path.toString().get());
+                    if(QFileInfo::exists(str) && QFileInfo(str).isDir()) {
+                        enable = true;
+                        break;
+                    }
+                }
+                else {
+                    auto info = proxyModel_->fileInfoFromPath(directoryPath_.child(name.toLocal8Bit().constData()));
+                    if(info && info->isDir()) {
+                        // the name of a dir is listed
+                        enable = true;
+                        break;
+                    }
                 }
             }
         }
@@ -1267,13 +1420,9 @@ bool FileDialog::FileDialogFilter::filterAcceptsRow(const ProxyFolderModel* /*mo
     }
 
     bool nameMatched = false;
-    auto& name = info->displayName();
+    auto& name = (!info->name().empty() ? QString::fromStdString(info->name()) : info->displayName());
     for(const auto& pattern: patterns_) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
         if(name.indexOf(pattern) == 0) {
-#else
-        if(pattern.exactMatch(name)) {
-#endif
             nameMatched = true;
             break;
         }
@@ -1299,13 +1448,8 @@ void FileDialog::FileDialogFilter::update() {
     // parse the "*.ext1 *.ext2 *.ext3 ..." list into QRegularExpression objects
     const auto globs = nameFilter.simplified().split(QLatin1Char(' '));
     for(const auto& glob: globs) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
-        patterns_.emplace_back(QRegularExpression(QStringLiteral("\\A(?:")
-                                                    + QRegularExpression::wildcardToRegularExpression(glob)
-                                                    + QStringLiteral(")\\z"), QRegularExpression::CaseInsensitiveOption));
-#else
-        patterns_.emplace_back(QRegExp(glob, Qt::CaseInsensitive, QRegExp::Wildcard));
-#endif
+        patterns_.emplace_back(QRegularExpression(QRegularExpression::wildcardToRegularExpression(glob),
+                                                  QRegularExpression::CaseInsensitiveOption));
     }
 }
 

@@ -3,6 +3,7 @@
 #include "libfmqt.h"
 #include "filedialog.h"
 
+#include <QCoreApplication>
 #include <QWindow>
 #include <QDebug>
 #include <QTimer>
@@ -113,7 +114,6 @@ void FileDialogHelper::selectNameFilter(const QString& filter) {
     dlg_->selectNameFilter(filter);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
 QString FileDialogHelper::selectedMimeTypeFilter() const {
     return dlg_->selectedMimeTypeFilter();
 }
@@ -121,7 +121,6 @@ QString FileDialogHelper::selectedMimeTypeFilter() const {
 void FileDialogHelper::selectMimeTypeFilter(const QString& filter) {
     dlg_->selectMimeTypeFilter(filter);
 }
-#endif
 
 QString FileDialogHelper::selectedNameFilter() const {
     return dlg_->selectedNameFilter();
@@ -169,7 +168,6 @@ void FileDialogHelper::applyOptions() {
     }
 
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
     auto filter = opt->initiallySelectedMimeTypeFilter();
     if(!filter.isEmpty()) {
         selectMimeTypeFilter(filter);
@@ -180,12 +178,6 @@ void FileDialogHelper::applyOptions() {
             selectNameFilter(opt->initiallySelectedNameFilter());
         }
     }
-#else
-    auto filter = opt->initiallySelectedNameFilter();
-    if(!filter.isEmpty()) {
-        selectNameFilter(filter);
-    }
-#endif
 
     const auto selectedFiles = opt->initiallySelectedFiles();
     for(const auto& selectedFile: selectedFiles) {
@@ -248,6 +240,9 @@ static Fm::FolderModel::ColumnId sortColumnFromString(const QString str) {
     else if(str == QLatin1String("mtime")) {
         ret = Fm::FolderModel::ColumnFileMTime;
     }
+    else if(str == QLatin1String("crtime")) {
+        ret = Fm::FolderModel::ColumnFileCrTime;
+    }
     else if(str == QLatin1String("dtime")) {
         ret = Fm::FolderModel::ColumnFileDTime;
     }
@@ -279,6 +274,9 @@ static const QString sortColumnToString(Fm::FolderModel::ColumnId value) {
     case Fm::FolderModel::ColumnFileMTime:
         ret = QLatin1String("mtime");
         break;
+    case Fm::FolderModel::ColumnFileCrTime:
+        ret = QLatin1String("crtime");
+        break;
     case Fm::FolderModel::ColumnFileDTime:
         ret = QLatin1String("dtime");
         break;
@@ -307,25 +305,35 @@ void FileDialogHelper::loadSettings() {
     dlg_->setSplitterPos(settings.value(QStringLiteral("SplitterPos"), 200).toInt());
     settings.endGroup();
 
-   settings.beginGroup (QStringLiteral("View"));
-   dlg_->setViewMode(viewModeFromString(settings.value(QStringLiteral("Mode"), QStringLiteral("Detailed")).toString()));
-   dlg_->sort(sortColumnFromString(settings.value(QStringLiteral("SortColumn")).toString()), sortOrderFromString(settings.value(QStringLiteral("SortOrder")).toString()));
-   dlg_->setSortFolderFirst(settings.value(QStringLiteral("SortFolderFirst"), true).toBool());
-   dlg_->setSortHiddenLast(settings.value(QStringLiteral("SortHiddenLast"), false).toBool());
-   dlg_->setSortCaseSensitive(settings.value(QStringLiteral("SortCaseSensitive"), false).toBool());
-   dlg_->setShowHidden(settings.value(QStringLiteral("ShowHidden"), false).toBool());
+    settings.beginGroup (QStringLiteral("View"));
+    dlg_->setViewMode(viewModeFromString(settings.value(QStringLiteral("Mode"), QStringLiteral("Detailed")).toString()));
+    dlg_->sort(sortColumnFromString(settings.value(QStringLiteral("SortColumn")).toString()), sortOrderFromString(settings.value(QStringLiteral("SortOrder")).toString()));
+    dlg_->setSortFolderFirst(settings.value(QStringLiteral("SortFolderFirst"), true).toBool());
+    dlg_->setSortHiddenLast(settings.value(QStringLiteral("SortHiddenLast"), false).toBool());
+    dlg_->setSortCaseSensitive(settings.value(QStringLiteral("SortCaseSensitive"), false).toBool());
+    dlg_->setShowHidden(settings.value(QStringLiteral("ShowHidden"), false).toBool());
 
-   dlg_->setShowThumbnails(settings.value(QStringLiteral("ShowThumbnails"), true).toBool());
-   dlg_->setNoItemTooltip(settings.value(QStringLiteral("NoItemTooltip"), false).toBool());
+    dlg_->setShowThumbnails(settings.value(QStringLiteral("ShowThumbnails"), true).toBool());
+    dlg_->setNoItemTooltip(settings.value(QStringLiteral("NoItemTooltip"), false).toBool());
+    dlg_->setScrollPerPixel(settings.value(QStringLiteral("ScrollPerPixel"), true).toBool());
 
-   dlg_->setBigIconSize(settings.value(QStringLiteral("BigIconSize"), 48).toInt());
-   dlg_->setSmallIconSize(settings.value(QStringLiteral("SmallIconSize"), 24).toInt());
-   dlg_->setThumbnailIconSize(settings.value(QStringLiteral("ThumbnailIconSize"), 128).toInt());
-   settings.endGroup();
+    dlg_->setBigIconSize(settings.value(QStringLiteral("BigIconSize"), 48).toInt());
+    dlg_->setSmallIconSize(settings.value(QStringLiteral("SmallIconSize"), 24).toInt());
+    dlg_->setThumbnailIconSize(settings.value(QStringLiteral("ThumbnailIconSize"), 128).toInt());
 
-   settings.beginGroup(QStringLiteral("Places"));
-   dlg_->setHiddenPlaces(settings.value(QStringLiteral("HiddenPlaces")).toStringList().toSet());
-   settings.endGroup();
+    const QList<QVariant> hiddenColumns = settings.value(QStringLiteral("HiddenColumns")).toList();
+    QList<int> l;
+    for(auto width : hiddenColumns) {
+        l << width.toInt();
+    }
+    dlg_->setHiddenColumns(l);
+    settings.endGroup();
+
+    settings.beginGroup(QStringLiteral("Places"));
+    QStringList hiddenPlacesList = settings.value(QStringLiteral("HiddenPlaces")).toStringList();
+    QSet<QString> hiddenPlacesSet = QSet<QString>(hiddenPlacesList.begin(), hiddenPlacesList.end());
+    dlg_->setHiddenPlaces(hiddenPlacesSet);
+    settings.endGroup();
 }
 
 // This also prevents redundant writings whenever a file dialog is closed without a change in its settings.
@@ -380,6 +388,10 @@ void FileDialogHelper::saveSettings() {
     if(settings.value(QStringLiteral("NoItemTooltip")).toBool() != noItemTooltip) {
         settings.setValue(QStringLiteral("NoItemTooltip"), noItemTooltip);
     }
+    bool scrollPerPixel = dlg_->scrollPerPixel();
+    if(settings.value(QStringLiteral("ScrollPerPixel")).toBool() != scrollPerPixel) {
+        settings.setValue(QStringLiteral("ScrollPerPixel"), scrollPerPixel);
+    }
 
     int size = dlg_->bigIconSize();
     if(settings.value(QStringLiteral("BigIconSize")).toInt() != size) {
@@ -393,6 +405,16 @@ void FileDialogHelper::saveSettings() {
     if(settings.value(QStringLiteral("ThumbnailIconSize")).toInt() != size) {
         settings.setValue(QStringLiteral("ThumbnailIconSize"), size);
     }
+
+    QList<int> columns = dlg_->getHiddenColumns();
+    std::sort(columns.begin(), columns.end());
+    QList<QVariant> hiddenColumns;
+    for(int i = 0; i < columns.size(); ++i) {
+        hiddenColumns << QVariant(columns.at(i));
+    }
+    if(settings.value(QStringLiteral("HiddenColumns")).toList() != hiddenColumns) {
+        settings.setValue(QStringLiteral("HiddenColumns"), hiddenColumns);
+    }
     settings.endGroup();
 
     settings.beginGroup(QStringLiteral("Places"));
@@ -400,9 +422,13 @@ void FileDialogHelper::saveSettings() {
     if(hiddenPlaces.isEmpty()) { // don't save "@Invalid()"
         settings.remove(QStringLiteral("HiddenPlaces"));
     }
-    else if(hiddenPlaces != settings.value(QStringLiteral("HiddenPlaces")).toStringList().toSet()) {
-        QStringList sl = hiddenPlaces.toList();
-        settings.setValue(QStringLiteral("HiddenPlaces"), sl);
+    else {
+        QStringList hiddenPlacesList = settings.value(QStringLiteral("HiddenPlaces")).toStringList();
+        QSet<QString> hiddenPlacesSet = QSet<QString>(hiddenPlacesList.begin(), hiddenPlacesList.end());
+        if (hiddenPlaces != hiddenPlacesSet) {
+            QStringList sl(hiddenPlaces.begin(), hiddenPlaces.end());
+            settings.setValue(QStringLiteral("HiddenPlaces"), sl);
+        }
     }
     settings.endGroup();
 }
@@ -431,6 +457,8 @@ QPlatformFileDialogHelper *createFileDialogHelper() {
     if(!libfmQtContext_) {
         // initialize libfm-qt only once
         libfmQtContext_ = std::unique_ptr<Fm::LibFmQt>{new Fm::LibFmQt()};
+        // add translations
+        QCoreApplication::installTranslator(libfmQtContext_.get()->translator());
     }
     return new Fm::FileDialogHelper{};
 }

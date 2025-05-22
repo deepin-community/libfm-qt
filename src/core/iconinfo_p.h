@@ -51,6 +51,10 @@ public:
 
     QPixmap pixmap(const QSize& size, QIcon::Mode mode, QIcon::State state) override;
 
+    QString iconName() override;
+    bool isNull() override;
+    QPixmap scaledPixmap(const QSize &size, QIcon::Mode mode, QIcon::State state, qreal scale) override;
+    QList<QSize> availableSizes(QIcon::Mode mode, QIcon::State state) override;
     void virtual_hook(int id, void* data) override;
 
 private:
@@ -89,31 +93,47 @@ QPixmap IconEngine::pixmap(const QSize& size, QIcon::Mode mode, QIcon::State sta
     return info ? info->internalQicon().pixmap(size, mode, state) : QPixmap{};
 }
 
+QString IconEngine::iconName() {
+    auto info = info_.lock();
+    return info ? info->internalQicon().name() : QString{};
+}
+
+bool IconEngine::isNull() {
+    auto info = info_.lock();
+    return info ? info->internalQicon().isNull() : true;
+}
+
+QPixmap IconEngine::scaledPixmap(const QSize &size, QIcon::Mode mode, QIcon::State state, qreal scale) {
+    auto info = info_.lock();
+    return info ?
+           // According to Qt doc, "size" is device-independent since Qt 6.8,
+           // while it was device-dependent prior to Qt 6.8.
+#if (QT_VERSION < QT_VERSION_CHECK(6,8,0))
+           info->internalQicon().pixmap((size.toSizeF() / scale).toSize(), scale, mode, state)
+#else
+           info->internalQicon().pixmap(size, scale, mode, state)
+#endif
+           : QPixmap{};
+}
+
+QList<QSize> IconEngine::availableSizes(QIcon::Mode mode, QIcon::State state) {
+    auto info = info_.lock();
+    return info ? info->internalQicon().availableSizes(mode, state) : QList<QSize>{};
+}
+
 void IconEngine::virtual_hook(int id, void* data) {
     auto info = info_.lock();
     switch(id) {
-    case QIconEngine::AvailableSizesHook: {
-        auto* args = reinterpret_cast<QIconEngine::AvailableSizesArgument*>(data);
-        args->sizes = info ? info->internalQicon().availableSizes(args->mode, args->state) : QList<QSize>{};
-        break;
-    }
-    case QIconEngine::IconNameHook: {
-        QString* result = reinterpret_cast<QString*>(data);
-        *result = info ? info->internalQicon().name() : QString{};
-        break;
-    }
     case QIconEngine::IsNullHook: {
         bool* result = reinterpret_cast<bool*>(data);
         *result = info ? info->internalQicon().isNull() : true;
         break;
     }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
     case QIconEngine::ScaledPixmapHook: {
         auto* arg = reinterpret_cast<QIconEngine::ScaledPixmapArgument*>(data);
         arg->pixmap = info ? info->internalQicon().pixmap(arg->size, arg->mode, arg->state) : QPixmap{};
         break;
     }
-#endif
     }
 }
 

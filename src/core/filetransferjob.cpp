@@ -7,7 +7,8 @@ namespace Fm {
 FileTransferJob::FileTransferJob(FilePathList srcPaths, Mode mode):
     FileOperationJob{},
     srcPaths_{std::move(srcPaths)},
-    mode_{mode} {
+    mode_{mode},
+    hasDestDirPath_{false} {
 }
 
 FileTransferJob::FileTransferJob(FilePathList srcPaths, FilePathList destPaths, Mode mode):
@@ -17,6 +18,7 @@ FileTransferJob::FileTransferJob(FilePathList srcPaths, FilePathList destPaths, 
 
 FileTransferJob::FileTransferJob(FilePathList srcPaths, const FilePath& destDirPath, Mode mode):
     FileTransferJob{std::move(srcPaths), mode} {
+    hasDestDirPath_ = true;
     setDestDirPath(destDirPath);
 }
 
@@ -25,17 +27,26 @@ void FileTransferJob::setSrcPaths(FilePathList srcPaths) {
 }
 
 void FileTransferJob::setDestPaths(FilePathList destPaths) {
+    hasDestDirPath_ = false;
     destPaths_ = std::move(destPaths);
 }
 
 void FileTransferJob::setDestDirPath(const FilePath& destDirPath) {
+    hasDestDirPath_ = true;
     destPaths_.clear();
     destPaths_.reserve(srcPaths_.size());
     for(const auto& srcPath: srcPaths_) {
         FilePath destPath;
-        if(mode_ == Mode::LINK && !srcPath.isNative()) {
+        if(!srcPath.isNative()) {
             // special handling for URLs
             auto fullBasename = srcPath.baseName();
+            if(g_strcmp0(fullBasename.get(), "/") == 0) { // happens when URI ends with slash
+                auto fullParseName = srcPath.displayName();
+                char* parseName = fullParseName.get();
+                parseName[strlen(parseName)-1] = 0;
+                auto path = FilePath::fromDisplayName(parseName);
+                fullBasename = path.baseName();
+            }
             char* basename = fullBasename.get();
             char* dname = nullptr;
             // if we drop URI query onto native filesystem, omit query part
@@ -65,7 +76,9 @@ void FileTransferJob::setDestDirPath(const FilePath& destDirPath) {
         else {
             destPath = destDirPath.child(srcPath.baseName().get());
         }
-        destPaths_.emplace_back(std::move(destPath));
+        if(destPath) {
+            destPaths_.emplace_back(std::move(destPath));
+        }
     }
 }
 
@@ -108,7 +121,7 @@ bool FileTransferJob::copyRegularFile(const FilePath& srcPath, const GFileInfoPt
         err.reset();
 
         // reset progress of the current file (only for copy)
-        auto size = g_file_info_get_size(srcInfo.get());
+        auto size = g_file_info_get_attribute_uint64(srcInfo.get(), G_FILE_ATTRIBUTE_STANDARD_SIZE);
         setCurrentFileProgress(size, 0);
 
         // do the file operation
@@ -390,17 +403,19 @@ bool FileTransferJob::processPath(const FilePath& srcPath, const FilePath& destD
     bool ret;
     switch(mode_) {
     case Mode::MOVE:
-        ret = moveFile(srcPath, srcInfo, destDirPath, destCopyName ? destCopyName : destFileName);
+        ret = moveFile(srcPath, srcInfo, destDirPath,
+                       hasDestDirPath_ && destCopyName ? destCopyName : destFileName);
         break;
     case Mode::COPY: {
         bool deleteSrc = false;
-        ret = copyFile(srcPath, srcInfo, destDirPath, destCopyName ? destCopyName : destFileName, deleteSrc);
+        ret = copyFile(srcPath, srcInfo, destDirPath,
+                       hasDestDirPath_ && destCopyName ? destCopyName : destFileName, deleteSrc);
         break;
     }
     case Mode::LINK:
         ret = linkFile(srcPath, srcInfo, destDirPath,
                         // see setDestDirPath()
-                        srcPath.isNative() && destCopyName ? destCopyName : destFileName);
+                        srcPath.isNative() && hasDestDirPath_ &&  destCopyName ? destCopyName : destFileName);
         break;
     default:
         ret = false;
@@ -440,7 +455,7 @@ bool FileTransferJob::moveFile(const FilePath &srcPath, const GFileInfoPtr &srcI
         // increase current progress
         // FIXME: it's not appropriate to calculate the progress of move operations using file size
         // since the time required to move a file is not related to it's file size.
-        auto size = g_file_info_get_size(srcInfo.get());
+        auto size = g_file_info_get_attribute_uint64(srcInfo.get(), G_FILE_ATTRIBUTE_STANDARD_SIZE);
         addFinishedAmount(size, 1);
     }
     else {
@@ -454,7 +469,7 @@ bool FileTransferJob::moveFile(const FilePath &srcPath, const GFileInfoPtr &srcI
 bool FileTransferJob::copyFile(const FilePath& srcPath, const GFileInfoPtr& srcInfo, const FilePath& destDirPath, const char* destFileName, bool skip) {
     setCurrentFile(srcPath);
 
-    auto size = g_file_info_get_size(srcInfo.get());
+    auto size = g_file_info_get_attribute_uint64(srcInfo.get(), G_FILE_ATTRIBUTE_STANDARD_SIZE);
     bool success = false;
     setCurrentFileProgress(size, 0);
 
@@ -553,8 +568,15 @@ bool FileTransferJob::createSymlink(const FilePath &srcPath, const GFileInfoPtr 
         retry = false;
         if(flags & G_FILE_COPY_OVERWRITE) {  // overwrite existing file
             // creating symlink cannot overwrite existing files directly, so we delete the existing file first.
-            g_file_delete(destPath.gfile().get(), cancellable().get(), nullptr);
+            err.reset();
+            if(!g_file_delete(destPath.gfile().get(), cancellable().get(), &err)) {
+                if(err) {
+                    emitError(err, ErrorSeverity::MODERATE);
+                }
+                break;
+            }
         }
+        err.reset();
         if(!g_file_make_symbolic_link(destPath.gfile().get(), src.get(), cancellable().get(), &err)) {
             retry = handleError(err, srcPath, srcInfo, destPath, flags);
         }
@@ -586,8 +608,15 @@ bool FileTransferJob::createShortcut(const FilePath &srcPath, const GFileInfoPtr
 
     CStrPtr srcPathDispName;
     auto name = g_file_info_get_display_name(srcInfo.get());
-    if(!name) {
-        srcPathDispName = srcPath.displayName();
+    if(!name || g_strcmp0(name, "/") == 0) {
+        srcPathDispName = srcPath.baseName();
+        if(g_strcmp0(srcPathDispName.get(), "/") == 0) { // happens when URI ends with slash
+            auto fullParseName = srcPath.displayName();
+            char* parseName = fullParseName.get();
+            parseName[strlen(parseName)-1] = 0;
+            auto path = FilePath::fromDisplayName(parseName);
+            srcPathDispName = path.baseName();
+        }
         name = srcPathDispName.get();
     }
 

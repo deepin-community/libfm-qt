@@ -24,10 +24,12 @@
 #include "filepropsdialog.h"
 #include "folderview.h"
 #include "utilities.h"
+#include "fileoperation.h"
 #include <cstring> // for memset
 #include <QDebug>
 #include "customaction_p.h"
 #include "customactions/fileaction.h"
+#include <QActionGroup>
 #include <QMessageBox>
 
 namespace Fm {
@@ -36,30 +38,64 @@ FolderMenu::FolderMenu(FolderView* view, QWidget* parent):
     QMenu(parent),
     view_(view) {
 
+    createAction_ = nullptr;
+    pasteAction_ = nullptr;
+    separator1_ = nullptr;
+    separator2_ = nullptr;
+
     ProxyFolderModel* model = view_->model();
 
-    createAction_ = new QAction(tr("Create &New"), this);
-    addAction(createAction_);
+    bool insideTrash = false;
+    bool insideSearch = false;
+    if(view_->path())
+    {
+        insideTrash = view_->path().hasUriScheme("trash");
+        insideSearch = view_->path().hasUriScheme("search");
+    }
+    if(insideTrash) {
+        if(auto folder = view_->folder()) {
+            if(!folder->isEmpty()) {
+                auto trashAction = new QAction(tr("Empty Trash"), this);
+                addAction(trashAction);
+                connect(trashAction, &QAction::triggered, []() {
+                    Fm::FilePathList files;
+                    files.push_back(Fm::FilePath::fromUri("trash:///"));
+                    Fm::FileOperation::deleteFiles(std::move(files), true);
+                });
+                addSeparator();
+            }
+        }
+    }
+    else if (!insideSearch) {
+        createAction_ = new QAction(tr("Create &New"), this);
+        addAction(createAction_);
+        createAction_->setMenu(new CreateNewMenu(view_, view_->path(), this));
+        separator1_ = addSeparator();
 
-    createAction_->setMenu(new CreateNewMenu(view_, view_->path(), this));
+        pasteAction_ = new QAction(QIcon::fromTheme(QStringLiteral("edit-paste")), tr("&Paste"), this);
+        addAction(pasteAction_);
+        connect(pasteAction_, &QAction::triggered, this, &FolderMenu::onPasteActionTriggered);
+        separator2_ = addSeparator();
+    }
 
-    separator1_ = addSeparator();
+    invertSelectionAction_ = nullptr; // kept only for backward compatibility
+    auto selMode = view_->childView()->selectionMode();
+    if(selMode == QAbstractItemView::SingleSelection || selMode == QAbstractItemView::NoSelection) {
+        selectAllAction_ = nullptr;
+        //invertSelectionAction_ = nullptr;
+        separator3_ = nullptr;
+    }
+    else {
+        selectAllAction_ = new QAction(QIcon::fromTheme(QStringLiteral("edit-select-all")), tr("Select &All"), this);
+        addAction(selectAllAction_);
+        connect(selectAllAction_, &QAction::triggered, this, &FolderMenu::onSelectAllActionTriggered);
 
-    pasteAction_ = new QAction(QIcon::fromTheme(QStringLiteral("edit-paste")), tr("&Paste"), this);
-    addAction(pasteAction_);
-    connect(pasteAction_, &QAction::triggered, this, &FolderMenu::onPasteActionTriggered);
+        /*invertSelectionAction_ = new QAction(tr("Invert Selection"), this);
+        addAction(invertSelectionAction_);
+        connect(invertSelectionAction_, &QAction::triggered, this, &FolderMenu::onInvertSelectionActionTriggered);*/
 
-    separator2_ = addSeparator();
-
-    selectAllAction_ = new QAction(tr("Select &All"), this);
-    addAction(selectAllAction_);
-    connect(selectAllAction_, &QAction::triggered, this, &FolderMenu::onSelectAllActionTriggered);
-
-    invertSelectionAction_ = new QAction(tr("Invert Selection"), this);
-    addAction(invertSelectionAction_);
-    connect(invertSelectionAction_, &QAction::triggered, this, &FolderMenu::onInvertSelectionActionTriggered);
-
-    separator3_ = addSeparator();
+        separator3_ = addSeparator();
+    }
 
     sortAction_ = new QAction(tr("Sorting"), this);
     addAction(sortAction_);
@@ -78,19 +114,25 @@ FolderMenu::FolderMenu(FolderView* view, QWidget* parent):
         FileInfoList files;
         files.push_back(folderInfo);
         auto custom_actions = FileActionItem::get_actions_for_files(files);
+        bool firstAction = true;
         for(auto& item: custom_actions) {
             if(item && !(item->get_target() & FILE_ACTION_TARGET_CONTEXT)) {
                 continue;  // this item is not for context menu
             }
-            if(item == custom_actions.front() && item && !item->is_action()) {
+            if(firstAction) {
                 addSeparator(); // before all custom actions
+                firstAction = false;
             }
             addCustomActionItem(this, item);
         }
 
         // disable actons that can't be used
-        pasteAction_->setEnabled(folderInfo->isWritable());
-        createAction_->setEnabled(folderInfo->isWritable());
+        if(pasteAction_) {
+            pasteAction_->setEnabled(folderInfo->isWritable());
+        }
+        if(createAction_) {
+            createAction_->setEnabled(folderInfo->isWritable());
+        }
     }
 
     separator4_ = addSeparator();
@@ -124,11 +166,11 @@ void FolderMenu::addCustomActionItem(QMenu* menu, std::shared_ptr<const FileActi
         }
     }
     else if(item->is_action()) {
-        connect(action, &QAction::triggered, this, &FolderMenu::onCustomActionTrigerred);
+        connect(action, &QAction::triggered, this, &FolderMenu::onCustomActionTriggered);
     }
 }
 
-void FolderMenu::onCustomActionTrigerred() {
+void FolderMenu::onCustomActionTriggered() {
     CustomAction* action = static_cast<CustomAction*>(sender());
     auto& item = action->item();
     auto folderInfo = view_->folderInfo();
@@ -162,6 +204,7 @@ void FolderMenu::createSortMenu() {
 
     addSortMenuItem(tr("By File Name"), FolderModel::ColumnFileName);
     addSortMenuItem(tr("By Modification Time"), FolderModel::ColumnFileMTime);
+    addSortMenuItem(tr("By Creation Time"), FolderModel::ColumnFileCrTime);
     if(auto folderPath = view_->path()) {
         if(strcmp(folderPath.toString().get(), "trash:///") == 0) {
             addSortMenuItem(tr("By Deletion Time"), FolderModel::ColumnFileDTime);
@@ -176,12 +219,12 @@ void FolderMenu::createSortMenu() {
 
     QActionGroup* group = new QActionGroup(this);
     group->setExclusive(true);
-    actionAscending_ = new QAction(tr("Ascending"), this);
+    actionAscending_ = new QAction(QIcon::fromTheme(QStringLiteral("view-sort-ascending")), tr("Ascending"), this);
     actionAscending_->setCheckable(true);
     sortMenu_->addAction(actionAscending_);
     group->addAction(actionAscending_);
 
-    actionDescending_ = new QAction(tr("Descending"), this);
+    actionDescending_ = new QAction(QIcon::fromTheme(QStringLiteral("view-sort-descending")), tr("Descending"), this);
     actionDescending_->setCheckable(true);
     sortMenu_->addAction(actionDescending_);
     group->addAction(actionDescending_);
@@ -313,7 +356,7 @@ void FolderMenu::onHiddenLastActionTriggered(bool checked) {
 void FolderMenu::onPropertiesActionTriggered() {
     auto folderInfo = view_->folderInfo();
     if(folderInfo) {
-        FilePropsDialog::showForFile(folderInfo);
+        FilePropsDialog::showForFile(folderInfo, view_->window());
     }
 }
 

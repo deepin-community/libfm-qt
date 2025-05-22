@@ -27,7 +27,6 @@
 #include <QStandardPaths>
 #include "utilities.h"
 #include "placesmodelitem.h"
-#include "dndactionmenu.h"
 #include "fileoperation.h"
 
 namespace Fm {
@@ -62,9 +61,9 @@ PlacesModel::PlacesModel(QObject* parent):
     placesRoot->appendRow(computerItem);
 
     { // Applications
-        const char* applicaion_icon_names[] = {"system-software-install", "applications-accessories", "application-x-executable"};
+        const char* application_icon_names[] = {"system-software-install", "applications-accessories", "application-x-executable"};
         // NOTE: g_themed_icon_new_from_names() accepts char**, but actually const char** is OK.
-        Fm::GIconPtr gicon{g_themed_icon_new_from_names((char**)applicaion_icon_names, G_N_ELEMENTS(applicaion_icon_names)), false};
+        Fm::GIconPtr gicon{g_themed_icon_new_from_names((char**)application_icon_names, G_N_ELEMENTS(application_icon_names)), false};
         auto fmicon = Fm::IconInfo::fromGIcon(std::move(gicon));
         applicationsItem = new PlacesModelItem(fmicon, tr("Applications"), Fm::FilePath::fromUri("menu:///applications/"));
         placesRoot->appendRow(applicationsItem);
@@ -124,7 +123,8 @@ PlacesModel::PlacesModel(QObject* parent):
                 }
                 else {
                     PlacesModelItem* item = new PlacesModelMountItem(mount);
-                    devicesRoot->appendRow(item);
+                    QStandardItem* eject_btn = new QStandardItem(ejectIcon_, QString());
+                    devicesRoot->appendRow(QList<QStandardItem*>() << item << eject_btn);
                 }
             }
             g_object_unref(mount);
@@ -165,7 +165,7 @@ PlacesModel::~PlacesModel() {
         g_object_unref(trashMonitor_);
     }
 
-    for(GMount* const mount : qAsConst(shadowedMounts_)) {
+    for(GMount* const mount : std::as_const(shadowedMounts_)) {
         g_object_unref(mount);
     }
 }
@@ -493,7 +493,7 @@ void PlacesModel::onBookmarksChanged() {
 
 Qt::ItemFlags PlacesModel::flags(const QModelIndex& index) const {
     if(!index.isValid()) {
-       // alow dropping on empty space (but also see PlacesModel::canDropMimeData)
+       // allow dropping on empty space (but also see PlacesModel::canDropMimeData)
        return Qt::ItemIsDropEnabled;
     }
     if(index.column() == 1) { // make 2nd column of every row selectable.
@@ -536,12 +536,12 @@ std::shared_ptr<PlacesModel> PlacesModel::globalInstance() {
 }
 
 
-bool PlacesModel::dropMimeData(const QMimeData* data, Qt::DropAction /*action*/, int row, int column, const QModelIndex& parent) {
+bool PlacesModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) {
     QStandardItem* item = itemFromIndex(parent);
     if(data->hasFormat(QStringLiteral("application/x-bookmark-row"))) { // the data being dopped is a bookmark row
         // decode it and do bookmark reordering
         QByteArray buf = data->data(QStringLiteral("application/x-bookmark-row"));
-        QDataStream stream(&buf, QIODevice::ReadOnly);
+        QDataStream stream(&buf, QIODeviceBase::ReadOnly);
         int oldPos = -1;
         char* pathStr = nullptr;
         stream >> oldPos >> pathStr;
@@ -580,7 +580,6 @@ bool PlacesModel::dropMimeData(const QMimeData* data, Qt::DropAction /*action*/,
                 if (item == trashItem_) {
                     auto paths = pathListFromQUrls(data->urls());
                     if(!paths.empty()) {
-                        Qt::DropAction action = DndActionMenu::askUser(Qt::MoveAction, QCursor::pos());
                         if (action == Qt::MoveAction) {
                             FileOperation::trashFiles(paths, false);
                         }
@@ -590,7 +589,6 @@ bool PlacesModel::dropMimeData(const QMimeData* data, Qt::DropAction /*action*/,
                     PlacesModelItem* placesItem = static_cast<PlacesModelItem*>(item);
                     auto destPath = placesItem->path();
                     if(destPath) {
-                        Qt::DropAction action = DndActionMenu::askUser(Qt::CopyAction | Qt::MoveAction | Qt::LinkAction, QCursor::pos());
                         auto paths = pathListFromQUrls(data->urls());
                         if(!paths.empty()) {
                             switch(action) {
@@ -669,7 +667,7 @@ QMimeData* PlacesModel::mimeData(const QModelIndexList& indexes) const {
             PlacesModelBookmarkItem* bookmarkItem = static_cast<PlacesModelBookmarkItem*>(item);
             QMimeData* mime = new QMimeData();
             QByteArray data;
-            QDataStream stream(&data, QIODevice::WriteOnly);
+            QDataStream stream(&data, QIODeviceBase::WriteOnly);
             // There is no safe and cross-process way to store a reference of a row.
             // Let's store the pos, name, and path of the bookmark item instead.
             auto pathStr = bookmarkItem->path().toString();

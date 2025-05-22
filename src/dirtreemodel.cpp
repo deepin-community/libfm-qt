@@ -19,7 +19,6 @@
 
 #include "dirtreemodel.h"
 #include "dirtreemodelitem.h"
-#include "dndactionmenu.h"
 #include "fileoperation.h"
 #include "utilities.h"
 #include <QDebug>
@@ -87,10 +86,9 @@ QVariant DirTreeModel::data(const QModelIndex& index, int role) const {
     return QVariant();
 }
 
-bool DirTreeModel::dropMimeData(const QMimeData* data, Qt::DropAction /*action*/, int /*row*/, int /*column*/, const QModelIndex& parent) {
+bool DirTreeModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int /*row*/, int /*column*/, const QModelIndex& parent) {
     if(auto destPath = filePath(parent)) {
         if(data->hasUrls()) { // files uris are dropped
-            Qt::DropAction action = DndActionMenu::askUser(Qt::CopyAction | Qt::MoveAction | Qt::LinkAction, QCursor::pos());
             auto paths = pathListFromQUrls(data->urls());
             if(!paths.empty()) {
                 switch(action) {
@@ -204,7 +202,7 @@ QModelIndex DirTreeModel::indexFromPath(const Fm::FilePath &path) const {
 }
 
 DirTreeModelItem* DirTreeModel::itemFromPath(const Fm::FilePath &path) const {
-    for(DirTreeModelItem* const item : qAsConst(rootItems_)) {
+    for(DirTreeModelItem* const item : std::as_const(rootItems_)) {
         if(item->fileInfo_ && path == item->fileInfo_->path()) {
             return item;
         }
@@ -261,7 +259,7 @@ QString DirTreeModel::dispName(const QModelIndex& index) {
 
 void DirTreeModel::setShowHidden(bool show_hidden) {
     showHidden_ = show_hidden;
-    for(DirTreeModelItem* const item : qAsConst(rootItems_)) {
+    for(DirTreeModelItem* const item : std::as_const(rootItems_)) {
         item->setShowHidden(show_hidden);
     }
 }

@@ -100,7 +100,7 @@ public:
     Fm::FilePathList selectedFilePaths() const;
     bool hasSelection() const;
     QModelIndex indexFromFolderPath(const Fm::FilePath& folderPath) const;
-    void selectFiles(const Fm::FileInfoList& files, bool add = false);
+    bool selectFiles(const Fm::FileInfoList& files, bool add = false);
 
     void selectAll();
 
@@ -130,9 +130,15 @@ public:
     void setCustomColumnWidths(const QList<int> &widths);
 
     QList<int> getHiddenColumns() const {
-        return hiddenColumns_.toList();
+        QList<int> il(hiddenColumns_.begin(), hiddenColumns_.end());
+        return il;
     }
     void setHiddenColumns(const QList<int> &columns);
+
+    bool scrollPerPixel() const {
+        return scrollPerPixel_;
+    }
+    void setScrollPerPixel(bool perPixel);
 
 protected:
     bool event(QEvent* event) override;
@@ -184,6 +190,10 @@ Q_SIGNALS:
     void columnResizedByUser();
     void columnHiddenByUser();
 
+    void inlineRenamed(const QString& oldName, const QString& newName);
+
+    void dropIsDecided(bool accepted);
+
 private:
 
     QAbstractItemView* view;
@@ -198,6 +208,7 @@ private:
     // the cell margins in the icon and thumbnail modes
     QSize itemDelegateMargins_;
     bool shadowHidden_;
+    bool scrollPerPixel_;
     bool ctrlRightClick_; // show folder context menu with Ctrl + right click
 
     // smooth scrolling:

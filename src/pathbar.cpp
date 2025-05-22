@@ -73,7 +73,7 @@ PathBar::PathBar(QWidget* parent):
     topLayout->addWidget(scrollToEnd_);
 
     // container widget of the path buttons
-    buttonsWidget_ = new QWidget(this);
+    buttonsWidget_ = new QWidget;
     buttonsWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     buttonsLayout_ = new QHBoxLayout(buttonsWidget_);
@@ -81,6 +81,15 @@ PathBar::PathBar(QWidget* parent):
     buttonsLayout_->setSpacing(0);
     buttonsLayout_->setSizeConstraint(QLayout::SetFixedSize); // required when added to scroll area according to QScrollArea doc.
     scrollArea_->setWidget(buttonsWidget_); // make the buttons widget scrollable if the path is too long
+
+    // ensure the parent's background is shown behind the bar
+    scrollArea_->viewport()->setAutoFillBackground(false);
+    buttonsWidget_->setAutoFillBackground(false);
+
+    // for wheel scrolling over buttons (= visible widgets)
+    buttonsWidget_->installEventFilter (this);
+    scrollToStart_->installEventFilter (this);
+    scrollToEnd_->installEventFilter (this);
 }
 
 void PathBar::resizeEvent(QResizeEvent* event) {
@@ -91,30 +100,13 @@ void PathBar::resizeEvent(QResizeEvent* event) {
     }
 }
 
-void PathBar::wheelEvent(QWheelEvent* event) {
-    QWidget::wheelEvent(event);
-    QAbstractSlider::SliderAction action = QAbstractSlider::SliderNoAction;
-    int vDelta = event->angleDelta().y();
-    if(vDelta > 0) {
-        if(scrollToStart_->isEnabled()) {
-            action = QAbstractSlider::SliderSingleStepSub;
-        }
-    }
-    else if(vDelta < 0) {
-        if(scrollToEnd_->isEnabled()) {
-            action = QAbstractSlider::SliderSingleStepAdd;
-        }
-    }
-    scrollArea_->horizontalScrollBar()->triggerAction(action);
-}
-
 void PathBar::mousePressEvent(QMouseEvent* event) {
     QWidget::mousePressEvent(event);
     if(event->button() == Qt::LeftButton) {
         openEditor();
     }
     else if(event->button() == Qt::MiddleButton) {
-        PathButton* btn = qobject_cast<PathButton*>(childAt(event->x(), event->y()));
+        PathButton* btn = qobject_cast<PathButton*>(childAt(event->position().toPoint()));
         if(btn != nullptr) {
             scrollArea_->ensureWidgetVisible(btn,
                                              1); // a harmless compensation for a miscalculation in Qt
@@ -127,13 +119,35 @@ void PathBar::contextMenuEvent(QContextMenuEvent* event) {
     QMenu* menu = new QMenu(this);
     connect(menu, &QMenu::aboutToHide, menu, &QMenu::deleteLater);
 
-    QAction* action = menu->addAction(tr("&Edit Path"));
+    QAction* action = menu->addAction(QIcon::fromTheme(QStringLiteral("edit-rename")), tr("&Edit Path"));
     connect(action, &QAction::triggered, this, &PathBar::openEditor);
 
-    action = menu->addAction(tr("&Copy Path"));
+    action = menu->addAction(QIcon::fromTheme(QStringLiteral("edit-copy")), tr("&Copy Path"));
     connect(action, &QAction::triggered, this, &PathBar::copyPath);
 
     menu->popup(mapToGlobal(event->pos()));
+}
+
+bool PathBar::eventFilter(QObject* watched, QEvent* event) {
+    if(event->type() == QEvent::Wheel
+       && (watched == buttonsWidget_ || watched == scrollToStart_ || watched == scrollToEnd_)) {
+        QWheelEvent* we = static_cast<QWheelEvent*>(event);
+        QAbstractSlider::SliderAction action = QAbstractSlider::SliderNoAction;
+        int vDelta = we->angleDelta().y();
+        if(vDelta > 0) {
+            if(scrollToStart_->isEnabled()) {
+                action = QAbstractSlider::SliderSingleStepSub;
+            }
+        }
+        else if(vDelta < 0) {
+            if(scrollToEnd_->isEnabled()) {
+                action = QAbstractSlider::SliderSingleStepAdd;
+            }
+        }
+        scrollArea_->horizontalScrollBar()->triggerAction(action);
+        return true;
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void PathBar::updateScrollButtonVisibility() {
@@ -186,7 +200,7 @@ void PathBar::onButtonToggled(bool checked) {
         currentPath_ = pathForButton(btn);
         Q_EMIT chdir(currentPath_);
 
-        // since scrolling to the toggled buton will happen correctly only when the
+        // since scrolling to the toggled button will happen correctly only when the
         // layout is updated and because the update is disabled on creating buttons
         // in setPath(), the update status can be used as a sign to know when to wait
         if(updatesEnabled()) {
@@ -328,6 +342,15 @@ void PathBar::closeEditor() {
     if(tempPathEdit_ == nullptr) {
         return;
     }
+
+    // WARNING: The d-tor of QWidget deletes its layout and sets it to null while the widget is
+    // still valid and before its children are destroyed. On the other hand, if the pathbar is
+    // deleted while the path-edit has focus, before it is destroyed, the path-edit will lose
+    // focus and call the current function. Therefore, the following nullity check is necessary.
+    if(layout() == nullptr) {
+        return;
+    }
+
     // If a menu has popped up synchronously (with QMenu::exec), the path buttons may be drawn
     // but the path-edit may not disappear until the menu is closed. So, we hide it here.
     // However, since hiding the path-edit makes it lose focus and emit editingFinished(),

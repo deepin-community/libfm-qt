@@ -57,16 +57,34 @@ QString FolderModelItem::ownerGroup() const {
 
 const QString &FolderModelItem::displayMtime() const {
     if(dispMtime_.isEmpty()) {
-        auto mtime = QDateTime::fromMSecsSinceEpoch(info->mtime() * 1000);
-        dispMtime_ = mtime.toString(Qt::SystemLocaleShortDate);
+        if(info->mtime() == 0) {
+            dispMtime_ = QObject::tr("N/A");
+        }
+        else {
+            auto mtime = QDateTime::fromMSecsSinceEpoch(info->mtime() * 1000);
+            dispMtime_ = QLocale().toString(mtime, QLocale::ShortFormat);
+        }
     }
     return dispMtime_;
 }
 
+const QString &FolderModelItem::displayCrtime() const {
+    if(dispCrtime_.isEmpty()) {
+        if(info->crtime() == 0) {
+            dispCrtime_ = QObject::tr("N/A");
+        }
+        else {
+            auto crtime = QDateTime::fromMSecsSinceEpoch(info->crtime() * 1000);
+            dispCrtime_ = QLocale().toString(crtime, QLocale::ShortFormat);
+        }
+    }
+    return dispCrtime_;
+}
+
 const QString &FolderModelItem::displayDtime() const {
     if(dispDtime_.isEmpty() && info->dtime() > 0) {
-        auto mtime = QDateTime::fromMSecsSinceEpoch(info->dtime() * 1000);
-        dispDtime_ = mtime.toString(Qt::SystemLocaleShortDate);
+        auto dtime = QDateTime::fromMSecsSinceEpoch(info->dtime() * 1000);
+        dispDtime_ = QLocale().toString(dtime, QLocale::ShortFormat);
     }
     return dispDtime_;
 }
@@ -83,10 +101,10 @@ const QString& FolderModelItem::displaySize() const {
 // The returned thumbnail item is temporary and short-lived
 // If you need to use the struct later, copy it to your own struct to keep it.
 FolderModelItem::Thumbnail* FolderModelItem::findThumbnail(int size) {
-    QVector<Thumbnail>::iterator it;
+    QList<Thumbnail>::iterator it;
     for(it = thumbnails.begin(); it != thumbnails.end(); ++it) {
         if(it->size == size) { // an image of the same size is found
-            return it;
+            return &(*it);
         }
     }
     if(it == thumbnails.end()) {
@@ -100,7 +118,7 @@ FolderModelItem::Thumbnail* FolderModelItem::findThumbnail(int size) {
 
 // remove cached thumbnail of the specified size
 void FolderModelItem::removeThumbnail(int size) {
-    QVector<Thumbnail>::iterator it;
+    QList<Thumbnail>::iterator it;
     for(it = thumbnails.begin(); it != thumbnails.end(); ++it) {
         if(it->size == size) { // an image of the same size is found
             thumbnails.erase(it);

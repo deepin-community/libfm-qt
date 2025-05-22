@@ -23,6 +23,7 @@
 #include "ui_filesearch.h"
 #include <limits>
 #include <QFileDialog>
+#include <QCompleter>
 #include <utility>
 
 namespace Fm {
@@ -33,7 +34,7 @@ FileSearchDialog::FileSearchDialog(QStringList paths, QWidget* parent, Qt::Windo
     ui->setupUi(this);
     ui->minSize->setMaximum(std::numeric_limits<int>().max());
     ui->maxSize->setMaximum(std::numeric_limits<int>().max());
-    for(const QString& path : qAsConst(paths)) {
+    for(const QString& path : std::as_const(paths)) {
         ui->listView->addItem(path);
     }
 
@@ -43,11 +44,39 @@ FileSearchDialog::FileSearchDialog(QStringList paths, QWidget* parent, Qt::Windo
     connect(ui->addPath, &QPushButton::clicked, this, &FileSearchDialog::onAddPath);
     connect(ui->removePath, &QPushButton::clicked, this, &FileSearchDialog::onRemovePath);
 
+    // the default completer is case-insensitive
+    ui->namePatterns->completer()->setCaseSensitivity(Qt::CaseSensitive);
+    ui->contentPattern->completer()->setCaseSensitivity(Qt::CaseSensitive);
+
+    // if the minimum width is not set here, it will be set by the item model,
+    // which can contain long texts and make the window very wide
+    ui->namePatterns->setMinimumWidth(150);
+    ui->contentPattern->setMinimumWidth(150);
+
     ui->namePatterns->setFocus();
 }
 
 FileSearchDialog::~FileSearchDialog() {
     delete ui;
+}
+
+QString FileSearchDialog::namePattern() const {
+    return ui->namePatterns->currentText();
+}
+
+QString FileSearchDialog::contentPattern() const {
+    return ui->contentPattern->currentText();
+}
+
+void FileSearchDialog::addNamePatterns(const QStringList& patterns) {
+    ui->namePatterns->addItems(patterns);
+    ui->namePatterns->setCurrentIndex(-1);
+    ui->namePatterns->setCurrentText(QLatin1String("*"));
+}
+
+void FileSearchDialog::addContentPatterns(const QStringList& patterns) {
+    ui->contentPattern->addItems(patterns);
+    ui->contentPattern->setCurrentIndex(-1);
 }
 
 void FileSearchDialog::accept() {
@@ -62,11 +91,11 @@ void FileSearchDialog::accept() {
 
         fm_search_set_recursive(search, ui->recursiveSearch->isChecked());
         fm_search_set_show_hidden(search, ui->searchHidden->isChecked());
-        fm_search_set_name_patterns(search, ui->namePatterns->text().toUtf8().constData());
+        fm_search_set_name_patterns(search, ui->namePatterns->currentText().toUtf8().constData());
         fm_search_set_name_ci(search, !ui->nameCaseSensitive->isChecked());
         fm_search_set_name_regex(search, ui->nameRegExp->isChecked());
 
-        fm_search_set_content_pattern(search, ui->contentPattern->text().toUtf8().constData());
+        fm_search_set_content_pattern(search, ui->contentPattern->currentText().toUtf8().constData());
         fm_search_set_content_ci(search, !ui->contentCaseSensitive->isChecked());
         fm_search_set_content_regex(search, ui->contentRegExp->isChecked());
 

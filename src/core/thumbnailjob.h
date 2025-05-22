@@ -13,7 +13,7 @@ class LIBFM_QT_API ThumbnailJob: public Job {
     Q_OBJECT
 public:
 
-    explicit ThumbnailJob(FileInfoList files, int size);
+    explicit ThumbnailJob(FileInfoList files, int size, bool isRemote = false);
 
     ~ThumbnailJob() override;
 
@@ -34,6 +34,12 @@ public:
     }
 
     static void setMaxThumbnailFileSize(int size);
+
+    static int maxExternalThumbnailFileSize() {
+        return maxExternalThumbnailFileSize_;
+    }
+
+    static void setMaxExternalThumbnailFileSize(int size);
 
     const std::vector<QImage>& results() const {
         return results_;
@@ -58,11 +64,12 @@ private:
 
     QImage loadForFile(const std::shared_ptr<const FileInfo>& file);
 
-    bool readJpegExif(GInputStream* stream, QImage& thumbnail, QMatrix& matrix);
+    bool readJpegExif(GInputStream* stream, QImage& thumbnail, QTransform& matrix);
 
 private:
     FileInfoList files_;
     int size_;
+    bool isRemote_;
     std::vector<QImage> results_;
     GCancellablePtr cancellable_;
     GChecksum* md5Calc_;
@@ -71,6 +78,7 @@ private:
 
     static bool localFilesOnly_;
     static int maxThumbnailFileSize_;
+    static int maxExternalThumbnailFileSize_;
 };
 
 } // namespace Fm

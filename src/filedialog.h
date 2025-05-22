@@ -5,11 +5,7 @@
 #include "core/filepath.h"
 
 #include <QFileDialog>
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
 #include <QRegularExpression>
-#else
-#include <QRegExp>
-#endif
 #include <vector>
 #include <memory>
 #include "folderview.h"
@@ -155,6 +151,11 @@ public:
     }
     void setNoItemTooltip(bool noItemTooltip);
 
+    bool scrollPerPixel() const {
+        return scrollPerPixel_;
+    }
+    void setScrollPerPixel(bool perPixel);
+
     int bigIconSize() const;
     void setBigIconSize(int size);
 
@@ -163,6 +164,9 @@ public:
 
     int thumbnailIconSize() const;
     void setThumbnailIconSize(int size);
+
+    QList<int> getHiddenColumns() const;
+    void setHiddenColumns(const QList<int> &columns);
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -196,11 +200,7 @@ private:
         void update();
 
         FileDialog* dlg_;
-#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
         std::vector<QRegularExpression> patterns_;
-#else
-        std::vector<QRegExp> patterns_;
-#endif
     };
 
     bool isLabelExplicitlySet(QFileDialog::DialogLabel label) const {
@@ -258,6 +258,7 @@ private:
     QMetaObject::Connection lambdaConnection_; // needed for disconnecting Fm::Folder signal from lambda:
     QSet<QString> hiddenPlaces_;
     bool noItemTooltip_;
+    bool scrollPerPixel_;
 };
 
 
